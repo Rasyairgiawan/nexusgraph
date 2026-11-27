@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  --ng-primary: #1E2A5A;
+  --ng-primary-hover: #1d4ed8;
+  --ng-primary-soft: #eaf1fe;
+  --ng-navy: #1e2a5a;
+  --ng-navy-hover: #172148;
+
+  --ng-bg-page: #f4f7fb;
+  --ng-bg-surface: #ffffff;
+  --ng-bg-subtle: #eef2f7;
+  --ng-border: #dce4f0;
+  --ng-edge-idle: #c5d0e0;
+  --ng-dot-grid: #d5deeb;
+
+  --ng-text-primary: #0f172a;
+  --ng-text-secondary: #5b6b82;
+  --ng-text-muted: #8a97ab;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+html,
+body {
+  background-color: var(--ng-bg-page);
+  color: var(--ng-text-primary);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.react-flow {
+  color-scheme: light;
+  --xy-background-color: transparent;
+  --xy-background-pattern-dots-color: #d5deeb;
+  --xy-edge-stroke-default: #c5d0e0;
+  --xy-edge-stroke-selected: #1E2A5A;
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: none;
+  --xy-attribution-background-color: transparent;
+}
+
+.react-flow__node {
+  box-shadow: none !important;
+}
+
+.react-flow__handle {
+  width: 6px !important;
+  height: 6px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.react-flow__minimap {
+  border: 1px solid #dce4f0;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+@keyframes ng-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ng-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-dropdown-in {
+  animation: ng-dropdown-in 150ms ease-out forwards;
+}
+
+.animate-sheet-in {
+  animation: ng-sheet-in 150ms ease-out forwards;
+}

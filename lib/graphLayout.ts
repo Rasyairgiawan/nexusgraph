@@ -2,11 +2,11 @@ import type { Paper } from '@/types';
 
 export const QUERY_NODE_WIDTH = 200;
 export const QUERY_NODE_HEIGHT = 76;
-export const PAPER_NODE_WIDTH = 210;
-export const PAPER_NODE_HEIGHT = 122;
+export const PAPER_NODE_WIDTH = 216;
+export const PAPER_NODE_HEIGHT = 144;
 
-const COLLISION_PAD_X = 34;
-const COLLISION_PAD_Y = 30;
+const COLLISION_PAD_X = 40;
+const COLLISION_PAD_Y = 38;
 const HUB_SAFE_RADIUS_X = Math.ceil(QUERY_NODE_WIDTH / 2 + PAPER_NODE_WIDTH / 2 + 26);
 const HUB_SAFE_RADIUS_Y = Math.ceil(QUERY_NODE_HEIGHT / 2 + PAPER_NODE_HEIGHT / 2 + 24);
 
@@ -313,7 +313,7 @@ export function computeRadialGraphLayout(
 
     return {
       paper,
-      cx: Math.cos(angle) * radius * 1.16, // Slightly wider horizontally for 210x122 card aspect
+      cx: Math.cos(angle) * radius * 1.16, // Slightly wider horizontally for the card aspect
       cy: Math.sin(angle) * radius * 0.94,
       tag: extractPrimaryMethodTag(paper) || 'GENERAL',
       pinned: false,

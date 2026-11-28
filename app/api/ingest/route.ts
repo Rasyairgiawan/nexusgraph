@@ -10,6 +10,8 @@ import {
   updateUserProfileRecord,
 } from '@/lib/serverSupabase';
 
+export const maxDuration = 60;
+
 const require = createRequire(import.meta.url);
 
 interface GatekeeperResponse {

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FolderPlus, Loader2, X } from 'lucide-react';
 import type { Paper, ProjectRecord, UserProfile } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 interface ProjectModalProps {
   paper: Paper | null;
@@ -25,6 +26,7 @@ export function ProjectModal({
   onSaveToExisting,
   onRequireAuth,
 }: ProjectModalProps) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'select' | 'create'>(
     projects.length === 0 ? 'create' : initialMode
   );
@@ -50,20 +52,19 @@ export function ProjectModal({
         <div className="w-full max-w-[420px] rounded-2xl border border-[#DCE4F0] bg-white p-5 shadow-2xl">
           <div className="flex items-start justify-between">
             <h2 className="text-[15px] font-bold text-[#0F172A]">
-              Sign In to Save Research Projects
+              {t('authRequiredSaveTitle')}
             </h2>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close modal"
+              aria-label={t('closeModal')}
               className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
           <p className="mt-2 text-[12.5px] leading-relaxed text-[#5B6B82]">
-            Projects and personal thesis notes are stored per account in Supabase. Sign
-            in or create a free researcher account to organize saved theses.
+            {t('authRequiredSaveDescription')}
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <button
@@ -71,7 +72,7 @@ export function ProjectModal({
               onClick={onClose}
               className="h-9 rounded-lg border border-[#DCE4F0] px-4 text-[12.5px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -81,7 +82,7 @@ export function ProjectModal({
               }}
               className="h-9 rounded-lg bg-[#1E2A5A] px-4 text-[12.5px] font-semibold text-white hover:bg-[#1D4ED8] cursor-pointer"
             >
-              Sign In
+              {t('signIn')}
             </button>
           </div>
         </div>
@@ -97,12 +98,12 @@ export function ProjectModal({
     try {
       if (mode === 'create') {
         if (!projectName.trim()) {
-          throw new Error('Project name cannot be empty.');
+          throw new Error(t('projectNameRequiredError'));
         }
         await onCreateProject(projectName.trim(), projectDescription.trim(), note.trim());
       } else {
         if (!selectedProjectId) {
-          throw new Error('Please choose a project.');
+          throw new Error(t('chooseProjectError'));
         }
         await onSaveToExisting(selectedProjectId, note.trim());
       }
@@ -118,7 +119,7 @@ export function ProjectModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Save to Research Project"
+      aria-label={t('saveProjectDialog')}
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSubmitting) onClose();
       }}
@@ -132,17 +133,17 @@ export function ProjectModal({
             </div>
             <div>
               <h2 className="text-[15px] font-bold text-[#0F172A]">
-                {paper ? 'Save Thesis to Project' : 'Create New Research Project'}
+                {paper ? t('saveThesisToProject') : t('createResearchProject')}
               </h2>
               <p className="text-[11.5px] text-[#5B6B82]">
-                Persisted in your Supabase research workspace
+                {t('persistedWorkspace')}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close modal"
+            aria-label={t('closeModal')}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -171,7 +172,7 @@ export function ProjectModal({
                   : 'border-[#DCE4F0] bg-white text-[#5B6B82]'
               }`}
             >
-              Existing Project
+              {t('existingProject')}
             </button>
             <button
               type="button"
@@ -182,7 +183,7 @@ export function ProjectModal({
                   : 'border-[#DCE4F0] bg-white text-[#5B6B82]'
               }`}
             >
-              + New Project
+              {t('newProject')}
             </button>
           </div>
         )}
@@ -191,7 +192,7 @@ export function ProjectModal({
           {mode === 'select' && projects.length > 0 ? (
             <div>
               <label className="block text-[12px] font-medium text-[#0F172A]">
-                Select Project
+                {t('selectProject')}
               </label>
               <select
                 value={selectedProjectId}
@@ -200,7 +201,7 @@ export function ProjectModal({
               >
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} ({p.items.length} saved)
+                    {p.name} ({p.items.length} {t('saved').toLowerCase()})
                   </option>
                 ))}
               </select>
@@ -209,26 +210,26 @@ export function ProjectModal({
             <>
               <div>
                 <label className="block text-[12px] font-medium text-[#0F172A]">
-                  Project Name
+                  {t('projectName')}
                 </label>
                 <input
                   type="text"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="e.g., Clinical NLP Literature Review"
+                  placeholder={t('projectNamePlaceholder')}
                   required
                   className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] px-3 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                 />
               </div>
               <div>
                 <label className="block text-[12px] font-medium text-[#0F172A]">
-                  Goal / Description <span className="font-normal text-[#8A97AB]">(optional)</span>
+                  {t('goalDescription')} <span className="font-normal text-[#8A97AB]">{t('optional')}</span>
                 </label>
                 <input
                   type="text"
                   value={projectDescription}
                   onChange={(e) => setProjectDescription(e.target.value)}
-                  placeholder="Scope or hypothesis of this research workspace..."
+                  placeholder={t('projectDescriptionPlaceholder')}
                   className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] px-3 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                 />
               </div>
@@ -238,13 +239,13 @@ export function ProjectModal({
           {paper && (
             <div>
               <label className="block text-[12px] font-medium text-[#0F172A]">
-                Personal Research Note <span className="font-normal text-[#8A97AB]">(optional)</span>
+                {t('personalResearchNote')} <span className="font-normal text-[#8A97AB]">{t('optional')}</span>
               </label>
               <textarea
                 rows={2}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Key methodology notes, baseline comparison, or follow-up idea..."
+                placeholder={t('researchNotePlaceholder')}
                 className="mt-1 w-full rounded-lg border border-[#DCE4F0] px-3 py-2 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
               />
             </div>
@@ -263,7 +264,7 @@ export function ProjectModal({
               disabled={isSubmitting}
               className="h-9 rounded-lg border border-[#DCE4F0] px-4 text-[12.5px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -271,7 +272,7 @@ export function ProjectModal({
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#1E2A5A] px-4 text-[12.5px] font-semibold text-white hover:bg-[#1D4ED8] disabled:opacity-60 cursor-pointer"
             >
               {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              <span>{mode === 'create' ? 'Create & Save' : 'Save to Project'}</span>
+              <span>{mode === 'create' ? t('createSave') : t('saveToProject')}</span>
             </button>
           </div>
         </form>

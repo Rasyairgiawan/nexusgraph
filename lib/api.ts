@@ -324,6 +324,7 @@ export async function deleteConversationApi(
 
 export async function askAiAssistantApi(payload: {
   message: string;
+  language?: 'en' | 'id';
   selectedThesisId?: string | null;
   queryContext?: string;
   yearFilter?: number | 'all';

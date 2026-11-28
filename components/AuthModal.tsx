@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { Eye, EyeOff, Loader2, X } from 'lucide-react';
 import { forgotPasswordApi, signInApi, signUpApi } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 import type {
   AiConversationRecord,
   ProjectRecord,
@@ -13,6 +14,7 @@ export type AuthModalMode = 'signin' | 'signup';
 
 interface AuthModalProps {
   mode: AuthModalMode;
+  required?: boolean;
   onModeChange: (mode: AuthModalMode) => void;
   onClose: () => void;
   onAuthenticated: (payload: {
@@ -46,10 +48,12 @@ function getPasswordStrength(password: string): {
 
 export function AuthModal({
   mode,
+  required = false,
   onModeChange,
   onClose,
   onAuthenticated,
 }: AuthModalProps) {
+  const { t, translateStatus } = useLanguage();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -84,7 +88,7 @@ export function AuthModal({
 
     if (forgotView) {
       if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        setErrorMsg('Please enter a valid email address.');
+        setErrorMsg(t('validEmailError'));
         return;
       }
       setIsSubmitting(true);
@@ -118,27 +122,27 @@ export function AuthModal({
 
     // Sign Up (Unified User Model — no Role)
     if (fullName.trim().length < 2) {
-      setErrorMsg('Full Name must be at least 2 characters.');
+      setErrorMsg(t('fullNameMinError'));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg('Please enter a valid academic email address.');
+      setErrorMsg(t('validAcademicEmailError'));
       return;
     }
     if (password.length < 8) {
-      setErrorMsg('Password must be at least 8 characters.');
+      setErrorMsg(t('passwordMinError'));
       return;
     }
     if (password !== confirmPassword) {
-      setErrorMsg('Password confirmation does not match.');
+      setErrorMsg(t('passwordConfirmMismatchError'));
       return;
     }
-    if (!institution.trim() || !major.trim()) {
-      setErrorMsg('Institution and Major / Study Program are required.');
+    if (!institution.trim() || !major.trim() || !researchInterests.trim()) {
+      setErrorMsg(t('academicFieldsRequiredError'));
       return;
     }
     if (!acceptedTerms) {
-      setErrorMsg('Please accept the Terms of Service and Privacy Policy.');
+      setErrorMsg(t('acceptTermsError'));
       return;
     }
 
@@ -168,15 +172,13 @@ export function AuthModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={
-        forgotView
-          ? 'Forgot Password'
-          : mode === 'signin'
-            ? 'Sign In to NexusGraph'
-            : 'Sign Up for NexusGraph'
-      }
+      aria-label={forgotView
+        ? t('forgotPasswordLabel')
+        : mode === 'signin'
+          ? t('signInTitle')
+          : t('signUpForNexusGraph')}
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) onClose();
+        if (!required && e.target === e.currentTarget && !isSubmitting) onClose();
       }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/45 p-4 backdrop-blur-[2px]"
     >
@@ -186,27 +188,29 @@ export function AuthModal({
           <div>
             <h2 className="text-[16px] font-bold text-[#0F172A]">
               {forgotView
-                ? 'Reset Password'
+                ? t('resetPassword')
                 : mode === 'signin'
-                  ? 'Sign In to NexusGraph'
-                  : 'Create NexusGraph Account'}
+                  ? t('signInTitle')
+                  : t('createAccountTitle')}
             </h2>
             <p className="mt-0.5 text-[12px] text-[#5B6B82]">
               {forgotView
-                ? 'Enter your email to receive a password reset link.'
+                ? t('resetPasswordDescription')
                 : mode === 'signin'
-                  ? 'Resume your research, projects, and claimed gaps.'
-                  : 'Unified academic researcher account stored securely in Supabase.'}
+                  ? t('signInDescription')
+                  : t('createAccountDescription')}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close auth dialog"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] hover:text-[#0F172A] cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {!required && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t('closeAuthDialog')}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] hover:text-[#0F172A] cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Form Body */}
@@ -214,13 +218,13 @@ export function AuthModal({
           {!forgotView && mode === 'signup' && (
             <div>
               <label className="block text-[12px] font-medium text-[#0F172A]">
-                Full Name
+                {t('fullName')}
               </label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g., Rina Kusuma"
+                placeholder={t('nameExamplePlaceholder')}
                 required
                 className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] px-3 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
               />
@@ -229,13 +233,13 @@ export function AuthModal({
 
           <div>
             <label className="block text-[12px] font-medium text-[#0F172A]">
-              Email
+            {t('emailLabel')}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@institution.ac.id"
+              placeholder={t('emailExamplePlaceholder')}
               required
               className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] px-3 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
             />
@@ -246,7 +250,7 @@ export function AuthModal({
               <div>
                 <div className="flex items-center justify-between">
                   <label className="block text-[12px] font-medium text-[#0F172A]">
-                    Password
+                    {t('password')}
                   </label>
                   {mode === 'signin' && (
                     <button
@@ -258,7 +262,7 @@ export function AuthModal({
                       }}
                       className="text-[11.5px] font-medium text-[#1E2A5A] hover:underline cursor-pointer"
                     >
-                      Forgot Password?
+                      {t('forgotPassword')}
                     </button>
                   )}
                 </div>
@@ -267,14 +271,14 @@ export function AuthModal({
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password (min. 8 characters)"
+                    placeholder={t('passwordPlaceholder')}
                     required
                     className="h-9 w-full rounded-lg border border-[#DCE4F0] pl-3 pr-9 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8A97AB] hover:text-[#0F172A] cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -294,7 +298,7 @@ export function AuthModal({
                       ))}
                     </div>
                     <span className="text-[11px] font-medium text-[#5B6B82]">
-                      {strength.label}
+                      {translateStatus(strength.label)}
                     </span>
                   </div>
                 )}
@@ -304,21 +308,21 @@ export function AuthModal({
                 <>
                   <div>
                     <label className="block text-[12px] font-medium text-[#0F172A]">
-                      Confirm Password
+                      {t('confirmPassword')}
                     </label>
                     <div className="relative mt-1">
                       <input
                         type={showConfirm ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
+                        placeholder={t('reenterPassword')}
                         required
                         className="h-9 w-full rounded-lg border border-[#DCE4F0] pl-3 pr-9 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirm((prev) => !prev)}
-                        aria-label={showConfirm ? 'Hide confirmation' : 'Show confirmation'}
+                        aria-label={showConfirm ? t('hideConfirmation') : t('showConfirmation')}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8A97AB] hover:text-[#0F172A] cursor-pointer"
                       >
                         {showConfirm ? (
@@ -333,19 +337,19 @@ export function AuthModal({
                   {/* Academic Background Fields */}
                   <div className="rounded-xl border border-[#DCE4F0] bg-[#F8FAFC] p-3.5 space-y-2.5">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-[#5B6B82]">
-                      Academic Background
+                      {t('academicBackground')}
                     </div>
 
                     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                       <div>
                         <label className="block text-[11.5px] font-medium text-[#0F172A]">
-                          Institution
+                          {t('institution')}
                         </label>
                         <input
                           type="text"
                           value={institution}
                           onChange={(e) => setInstitution(e.target.value)}
-                          placeholder="e.g., UIN Malang"
+                          placeholder={t('institutionExamplePlaceholder')}
                           required
                           className="mt-1 h-8 w-full rounded-lg border border-[#DCE4F0] bg-white px-2.5 text-[12px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                         />
@@ -353,13 +357,13 @@ export function AuthModal({
 
                       <div>
                         <label className="block text-[11.5px] font-medium text-[#0F172A]">
-                          Major / Program
+                          {t('majorProgram')}
                         </label>
                         <input
                           type="text"
                           value={major}
                           onChange={(e) => setMajor(e.target.value)}
-                          placeholder="e.g., Informatics"
+                          placeholder={t('majorExamplePlaceholder')}
                           required
                           className="mt-1 h-8 w-full rounded-lg border border-[#DCE4F0] bg-white px-2.5 text-[12px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                         />
@@ -369,26 +373,27 @@ export function AuthModal({
                     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                       <div>
                         <label className="block text-[11.5px] font-medium text-[#0F172A]">
-                          Student ID (NIM)
+                          {t('studentId')}
                         </label>
                         <input
                           type="text"
                           value={nim}
                           onChange={(e) => setNim(e.target.value)}
-                          placeholder="e.g., 210605110042"
+                          placeholder={t('studentIdExamplePlaceholder')}
                           className="mt-1 h-8 w-full rounded-lg border border-[#DCE4F0] bg-white px-2.5 text-[12px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                         />
                       </div>
 
                       <div>
                         <label className="block text-[11.5px] font-medium text-[#0F172A]">
-                          Research Interests
+                          {t('researchInterests')}
                         </label>
                         <input
                           type="text"
                           value={researchInterests}
                           onChange={(e) => setResearchInterests(e.target.value)}
-                          placeholder="e.g., NLP, Vision, Healthcare AI"
+                          placeholder={t('interestsExamplePlaceholder')}
+                          required
                           className="mt-1 h-8 w-full rounded-lg border border-[#DCE4F0] bg-white px-2.5 text-[12px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                         />
                       </div>
@@ -403,7 +408,7 @@ export function AuthModal({
                       className="mt-0.5 h-3.5 w-3.5 rounded border-[#DCE4F0] accent-[#1E2A5A] cursor-pointer"
                     />
                     <span>
-                      I agree to the NexusGraph Terms of Service and Privacy Policy.
+                      {t('agreeTerms')}
                     </span>
                   </label>
                 </>
@@ -431,10 +436,10 @@ export function AuthModal({
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             <span>
               {forgotView
-                ? 'Send Reset Link'
+                ? t('sendResetLink')
                 : mode === 'signin'
-                  ? 'Sign In'
-                  : 'Sign Up'}
+                  ? t('signIn')
+                  : t('signUp')}
             </span>
           </button>
 
@@ -445,28 +450,28 @@ export function AuthModal({
                 onClick={() => setForgotView(false)}
                 className="font-semibold text-[#1E2A5A] hover:underline cursor-pointer"
               >
-                Back to Sign In
+                {t('backToSignIn')}
               </button>
             ) : mode === 'signin' ? (
               <>
-                Don&apos;t have an account?{' '}
+                {t('dontHaveAccount')}{' '}
                 <button
                   type="button"
                   onClick={() => switchMode('signup')}
                   className="font-semibold text-[#1E2A5A] hover:underline cursor-pointer"
                 >
-                  Sign Up
+                  {t('signUp')}
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{' '}
+                {t('alreadyHaveAccount')}{' '}
                 <button
                   type="button"
                   onClick={() => switchMode('signin')}
                   className="font-semibold text-[#1E2A5A] hover:underline cursor-pointer"
                 >
-                  Sign In
+                  {t('signIn')}
                 </button>
               </>
             )}

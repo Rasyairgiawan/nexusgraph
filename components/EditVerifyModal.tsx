@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Check, Loader2, ShieldCheck, X } from 'lucide-react';
 import type { Paper, PaperUpdatePayload, UserProfile } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 interface EditVerifyModalProps {
   paper: Paper;
@@ -17,6 +18,7 @@ export function EditVerifyModal({
   onClose,
   onSave,
 }: EditVerifyModalProps) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState(paper.title);
   const [author, setAuthor] = useState(paper.author);
   const [year, setYear] = useState(paper.year);
@@ -68,7 +70,7 @@ export function EditVerifyModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Edit and Verify Thesis Entities"
+      aria-label={t('editVerifyDialog')}
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSaving) onClose();
       }}
@@ -80,17 +82,17 @@ export function EditVerifyModal({
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-[#1E2A5A]" />
               <h2 className="text-[15.5px] font-bold text-[#0F172A]">
-                Edit &amp; Verify 5 Research Entities
+                {t('editEntitiesTitle')}
               </h2>
             </div>
             <p className="mt-0.5 text-[12px] text-[#5B6B82]">
-              Review AI-extracted fields and mark the thesis verified in Supabase.
+              {t('editEntitiesDescription')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close modal"
+            aria-label={t('closeModal')}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] hover:text-[#0F172A] cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -100,7 +102,7 @@ export function EditVerifyModal({
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-3.5">
           <div>
             <label className="block text-[11.5px] font-semibold text-[#0F172A]">
-              Thesis Title
+              {t('thesisTitle')}
             </label>
             <input
               type="text"
@@ -114,7 +116,7 @@ export function EditVerifyModal({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="sm:col-span-2">
               <label className="block text-[11.5px] font-semibold text-[#0F172A]">
-                Author
+                {t('author').replace(/:$/, '')}
               </label>
               <input
                 type="text"
@@ -126,7 +128,7 @@ export function EditVerifyModal({
             </div>
             <div>
               <label className="block text-[11.5px] font-semibold text-[#0F172A]">
-                Year
+                {t('year')}
               </label>
               <input
                 type="number"
@@ -142,20 +144,20 @@ export function EditVerifyModal({
 
           <div>
             <label className="block text-[11.5px] font-semibold text-[#0F172A]">
-              Original Source URL
+              {t('originalSourceUrl')}
             </label>
             <input
               type="url"
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://repository.university.ac.id/..."
+              placeholder={t('originalSourceUrlPlaceholder')}
               className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] px-3 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
             />
           </div>
 
           <div>
             <label className="block text-[11.5px] font-semibold text-[#1E2A5A]">
-              1. Research Problem
+              {t('entProblem')}
             </label>
             <textarea
               rows={2}
@@ -168,7 +170,7 @@ export function EditVerifyModal({
 
           <div>
             <label className="block text-[11.5px] font-semibold text-[#7C3AED]">
-              2. Methodology
+              {t('methodology')}
             </label>
             <textarea
               rows={2}
@@ -181,7 +183,7 @@ export function EditVerifyModal({
 
           <div>
             <label className="block text-[11.5px] font-semibold text-[#0D9488]">
-              3. Dataset / Object
+              {t('datasetObject')}
             </label>
             <textarea
               rows={2}
@@ -194,7 +196,7 @@ export function EditVerifyModal({
 
           <div>
             <label className="block text-[11.5px] font-semibold text-[#EA580C]">
-              4. Key Findings
+              {t('keyFindings')}
             </label>
             <textarea
               rows={2}
@@ -207,7 +209,7 @@ export function EditVerifyModal({
 
           <div>
             <label className="block text-[11.5px] font-semibold text-[#4F46E5]">
-              5. Research Gap / Future Work
+              {t('researchGapFuture')}
             </label>
             <textarea
               rows={2}
@@ -227,19 +229,19 @@ export function EditVerifyModal({
                 onChange={(e) => setVerified(e.target.checked)}
                 className="h-4 w-4 rounded border-[#15803D] accent-[#16A34A] cursor-pointer"
               />
-              <span>Mark as Human-Verified (Promote to Global Campus Graph)</span>
+              <span>{t('markHumanVerified')}</span>
             </label>
 
             {verified && (
               <div className="mt-2.5">
                 <label className="block text-[11px] font-medium text-[#15803D]">
-                  Verified By
+                  {t('verifiedBy')}
                 </label>
                 <input
                   type="text"
                   value={verifiedBy}
                   onChange={(e) => setVerifiedBy(e.target.value)}
-                  placeholder="Reviewer full name"
+                  placeholder={t('reviewerNamePlaceholder')}
                   className="mt-1 h-8 w-full rounded-lg border border-[#BCE6CA] bg-white px-2.5 text-[12px] text-[#0F172A] focus:border-[#16A34A] focus:outline-none"
                 />
               </div>
@@ -259,7 +261,7 @@ export function EditVerifyModal({
               disabled={isSaving}
               className="h-9 rounded-lg border border-[#DCE4F0] px-4 text-[12.5px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -269,12 +271,12 @@ export function EditVerifyModal({
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
+                  <span>{t('saving')}</span>
                 </>
               ) : (
                 <>
                   <Check className="h-4 w-4" />
-                  <span>Save &amp; Update Graph</span>
+                  <span>{t('saveUpdateGraph')}</span>
                 </>
               )}
             </button>

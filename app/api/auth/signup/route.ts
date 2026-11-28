@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
     if (password !== confirmPassword) {
       return NextResponse.json({ error: 'Password confirmation does not match.' }, { status: 400 });
     }
-    if (!institution || !major) {
+    if (!institution || !major || !researchInterests) {
       return NextResponse.json(
-        { error: 'Institution and Major / Study Program are required.' },
+        { error: 'Institution, Major / Study Program, and Research Interests are required.' },
         { status: 400 }
       );
     }

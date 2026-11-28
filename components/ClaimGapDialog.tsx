@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Hand, Loader2, X } from 'lucide-react';
 import { createGapClaimApi } from '@/lib/api';
 import type { Paper, UserProfile } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 interface ClaimGapDialogProps {
   paper: Paper;
@@ -20,6 +21,7 @@ export function ClaimGapDialog({
   onClaimed,
   onRequireAuth,
 }: ClaimGapDialogProps) {
+  const { t } = useLanguage();
   const [userName, setUserName] = useState(currentUser?.fullName || '');
   const [plannedAngle, setPlannedAngle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -30,7 +32,7 @@ export function ClaimGapDialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Sign In to Claim Research Gap"
+        aria-label={t('signInClaimTitle')}
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
@@ -43,21 +45,20 @@ export function ClaimGapDialog({
                 <Hand className="h-4 w-4" />
               </div>
               <h2 className="text-[15px] font-bold text-[#0F172A]">
-                Sign In to Claim Research Gap
+                {t('signInClaimTitle')}
               </h2>
             </div>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close claim dialog"
+              aria-label={t('closeClaimDialog')}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
           <p className="mt-3 text-[12.5px] leading-relaxed text-[#5B6B82]">
-            Sign in with your researcher account so your claim is linked to your Profile
-            and protected against unauthorized edits.
+            {t('signInClaimDescription')}
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <button
@@ -65,7 +66,7 @@ export function ClaimGapDialog({
               onClick={onClose}
               className="h-9 rounded-lg border border-[#DCE4F0] px-4 text-[12.5px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -75,7 +76,7 @@ export function ClaimGapDialog({
               }}
               className="h-9 rounded-lg bg-[#1E2A5A] px-4 text-[12.5px] font-semibold text-white hover:bg-[#1D4ED8] cursor-pointer"
             >
-              Sign In
+              {t('signIn')}
             </button>
           </div>
         </div>
@@ -86,11 +87,11 @@ export function ClaimGapDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userName.trim()) {
-      setErrorMsg('Researcher name is required.');
+      setErrorMsg(t('researcherNameRequiredError'));
       return;
     }
     if (!plannedAngle.trim()) {
-      setErrorMsg('Planned follow-up angle is required.');
+      setErrorMsg(t('plannedAngleRequiredError'));
       return;
     }
 
@@ -116,7 +117,7 @@ export function ClaimGapDialog({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Claim Research Gap"
+      aria-label={t('claimDialog')}
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSaving) onClose();
       }}
@@ -130,17 +131,17 @@ export function ClaimGapDialog({
             </div>
             <div>
               <h2 className="text-[15px] font-bold text-[#0F172A]">
-                Claim Research Gap
+                {t('claimTitle')}
               </h2>
               <p className="text-[11.5px] text-[#5B6B82]">
-                Register your unique follow-up angle in Supabase
+                {t('registerFollowUp')}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close claim dialog"
+            aria-label={t('closeClaimDialog')}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -149,7 +150,7 @@ export function ClaimGapDialog({
 
         <div className="mt-3.5 rounded-xl border border-[#F5D77A] bg-[#FFF9E6] p-3">
           <div className="text-[10.5px] font-bold uppercase tracking-wide text-[#B45309]">
-            Target Research Gap ({paper.year})
+            {t('targetResearchGap')} ({paper.year})
           </div>
           <p className="mt-1 text-[12px] leading-relaxed text-[#0F172A]">
             {paper.futureWork}
@@ -162,14 +163,14 @@ export function ClaimGapDialog({
               htmlFor="claim-name"
               className="block text-[12px] font-medium text-[#0F172A]"
             >
-              Researcher Name
+              {t('researcherName')}
             </label>
             <input
               id="claim-name"
               type="text"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              placeholder="e.g., Rina Kusuma"
+              placeholder={t('nameExamplePlaceholder')}
               required
               className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] px-3 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
             />
@@ -180,21 +181,21 @@ export function ClaimGapDialog({
               htmlFor="claim-angle"
               className="block text-[12px] font-medium text-[#0F172A]"
             >
-              Planned Research Angle
+              {t('plannedResearchAngle')}
             </label>
             <textarea
               id="claim-angle"
               rows={3}
               value={plannedAngle}
               onChange={(e) => setPlannedAngle(e.target.value)}
-              placeholder="Specify how your planned approach extends or differs from existing work..."
+              placeholder={t('researchAnglePlaceholder')}
               required
               className="mt-1 w-full rounded-lg border border-[#DCE4F0] px-3 py-2 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
             />
           </div>
 
           <p className="text-[11px] leading-snug text-[#5B6B82]">
-            Claims start as &apos;Exploring&apos; and auto-expire in 30 days unless marked &apos;In Progress&apos; in your Profile.
+            {t('claimExpiryNote')}
           </p>
 
           {errorMsg && (
@@ -210,7 +211,7 @@ export function ClaimGapDialog({
               disabled={isSaving}
               className="h-9 rounded-lg border border-[#DCE4F0] px-4 text-[12.5px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -220,12 +221,12 @@ export function ClaimGapDialog({
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Confirming...</span>
+                  <span>{t('confirming')}</span>
                 </>
               ) : (
                 <>
                   <Hand className="h-4 w-4" />
-                  <span>Confirm Claim</span>
+                  <span>{t('confirmClaim')}</span>
                 </>
               )}
             </button>

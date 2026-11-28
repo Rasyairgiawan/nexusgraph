@@ -42,14 +42,28 @@ function reconstructOpenAlexAbstract(
   return words.filter(Boolean).join(' ').trim();
 }
 
-async function harvestOpenAlex(
-  query: string,
-  limit: number
+function matchesAbstractKeywords(
+  title: string,
+  abstract: string,
+  terms: string[]
+): boolean {
+  if (abstract.length < 40) return false;
+  if (terms.length === 0) return true;
+  const hay = `${title} ${abstract}`.toLowerCase();
+  return terms.every((term) => hay.includes(term));
+}
+
+async function fetchOpenAlexWorks(
+  searchTerm: string,
+  filter: string,
+  perPage: number,
+  terms: string[],
+  seenIds: Set<string>,
+  maxTake: number
 ): Promise<HarvestCandidate[]> {
-  const searchTerm = query.trim() || 'machine learning education research';
   const url = `https://api.openalex.org/works?search=${encodeURIComponent(
     searchTerm
-  )}&per-page=${Math.min(Math.max(limit, 1), 20)}&filter=has_abstract:true&select=id,doi,title,publication_year,authorships,primary_location,abstract_inverted_index,open_access`;
+  )}&per-page=${perPage}&filter=${filter}&select=id,doi,title,publication_year,authorships,primary_location,abstract_inverted_index,open_access`;
 
   const res = await fetch(url, {
     headers: {
@@ -75,6 +89,7 @@ async function harvestOpenAlex(
       }>;
       primary_location?: {
         landing_page_url?: string;
+        pdf_url?: string;
         source?: { display_name?: string };
       };
       open_access?: { oa_url?: string };
@@ -83,38 +98,90 @@ async function harvestOpenAlex(
   };
 
   const works = Array.isArray(data.results) ? data.results : [];
-  return works
-    .filter((w) => w.title)
-    .slice(0, limit)
-    .map((w, idx) => {
-      const authors = (w.authorships || [])
-        .map((a) => a.author?.display_name)
-        .filter(Boolean)
-        .slice(0, 3)
-        .join(', ');
-      const university =
-        w.authorships?.[0]?.institutions?.[0]?.display_name ||
-        w.primary_location?.source?.display_name ||
-        'OpenAlex Open-Access';
-      const abstract = reconstructOpenAlexAbstract(w.abstract_inverted_index);
-      const sourceUrl =
-        w.doi ||
-        w.open_access?.oa_url ||
-        w.primary_location?.landing_page_url ||
-        w.id ||
-        '';
+  const results: HarvestCandidate[] = [];
 
-      return {
-        externalId: w.id || `openalex-${idx}`,
-        title: (w.title || 'Untitled Research Work').trim(),
-        author: authors || 'OpenAlex Contributor',
-        year: w.publication_year || new Date().getFullYear(),
-        university,
-        abstract: abstract || 'Abstract indexed in OpenAlex open-access corpus.',
-        sourceUrl,
-        sourceType: 'open_access' as const,
-      };
+  for (let idx = 0; idx < works.length; idx++) {
+    const w = works[idx];
+    if (!w.title) continue;
+    const extId = w.id || w.doi || w.title.trim().toLowerCase();
+    if (seenIds.has(extId)) continue;
+
+    const abstract = reconstructOpenAlexAbstract(w.abstract_inverted_index);
+    if (!matchesAbstractKeywords(w.title, abstract, terms)) continue;
+
+    const authors = (w.authorships || [])
+      .map((a) => a.author?.display_name)
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(', ');
+    const university =
+      w.authorships?.[0]?.institutions?.[0]?.display_name ||
+      w.primary_location?.source?.display_name ||
+      'OpenAlex Repository';
+    const sourceUrl =
+      w.primary_location?.pdf_url ||
+      w.open_access?.oa_url ||
+      w.doi ||
+      w.primary_location?.landing_page_url ||
+      w.id ||
+      '';
+
+    seenIds.add(extId);
+    results.push({
+      externalId: extId,
+      title: w.title.trim(),
+      author: authors || 'OpenAlex Contributor',
+      year: w.publication_year || new Date().getFullYear(),
+      university,
+      abstract,
+      sourceUrl,
+      sourceType: 'open_access',
     });
+
+    if (results.length >= maxTake) break;
+  }
+
+  return results;
+}
+
+async function harvestOpenAlex(
+  query: string,
+  limit: number
+): Promise<HarvestCandidate[]> {
+  const searchTerm = query.trim();
+  if (!searchTerm) {
+    throw new Error('Please enter a search keyword to harvest matching abstracts.');
+  }
+
+  const perPage = Math.min(Math.max(limit * 2, 50), 100);
+  const terms = searchTerm
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((term) => term.length >= 2);
+  const seenIds = new Set<string>();
+
+  const indonesiaResults = await fetchOpenAlexWorks(
+    searchTerm,
+    'has_abstract:true,type:dissertation,authorships.institutions.country_code:ID',
+    perPage,
+    terms,
+    seenIds,
+    limit
+  );
+  if (indonesiaResults.length >= limit) {
+    return indonesiaResults.slice(0, limit);
+  }
+
+  const globalResults = await fetchOpenAlexWorks(
+    searchTerm,
+    'has_abstract:true,type:dissertation',
+    perPage,
+    terms,
+    seenIds,
+    limit - indonesiaResults.length
+  );
+
+  return [...indonesiaResults, ...globalResults].slice(0, limit);
 }
 
 function parseOaiRecords(xml: string, baseUrl: string): HarvestCandidate[] {
@@ -134,10 +201,15 @@ function parseOaiRecords(xml: string, baseUrl: string): HarvestCandidate[] {
     const title = titleVals[0];
     if (!title) continue;
 
+    const abstract = descVals.sort((a, b) => b.length - a.length)[0] || '';
     const yearMatch = (dateVals[0] || '').match(/\b(19\d{2}|20\d{2})\b/);
     const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
 
-    const urlIdentifier = identifierVals.find((val) => /^https?:\/\//i.test(val));
+    const pdfIdentifier = identifierVals.find((val) =>
+      /^https?:\/\/.+\.pdf(\?.*)?$/i.test(val)
+    );
+    const urlIdentifier =
+      pdfIdentifier || identifierVals.find((val) => /^https?:\/\//i.test(val));
     const oaiIdentifier = identifierVals.find((val) => val.startsWith('oai:'));
     const sourceUrl =
       urlIdentifier ||
@@ -159,11 +231,9 @@ function parseOaiRecords(xml: string, baseUrl: string): HarvestCandidate[] {
       author: creatorVals.slice(0, 3).join(', ') || 'Campus Repository Author',
       year,
       university: hostUniversity,
-      abstract:
-        descVals.sort((a, b) => b.length - a.length)[0] ||
-        'Harvested from campus OAI-PMH Dublin Core repository.',
+      abstract,
       sourceUrl,
-      sourceType: 'open_access' as const,
+      sourceType: 'campus_repo',
     });
   }
 
@@ -183,55 +253,70 @@ async function harvestOaiPmh(
     throw new Error('Campus OAI-PMH URL must begin with http:// or https://.');
   }
 
-  const listUrl = `${cleanedBase}?verb=ListRecords&metadataPrefix=oai_dc`;
-  const res = await fetch(listUrl, {
-    headers: {
-      Accept: 'application/xml, text/xml, */*',
-      'User-Agent': 'NexusGraph-OAI-Harvester/1.0',
-    },
-    signal: AbortSignal.timeout(15000),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Campus repository returned HTTP ${res.status}.`);
-  }
-
-  const xml = await res.text();
-  if (!xml.includes('<record')) {
-    throw new Error(
-      'The OAI-PMH endpoint did not return Dublin Core (<record>) entries.'
-    );
-  }
-
-  const allRecords = parseOaiRecords(xml, cleanedBase);
   const terms = query
     .toLowerCase()
     .split(/\s+/)
     .map((t) => t.trim())
     .filter((t) => t.length >= 2);
 
-  if (terms.length === 0) {
-    return allRecords.slice(0, limit);
+  const matched: HarvestCandidate[] = [];
+  const seenIds = new Set<string>();
+  let resumptionToken: string | null = null;
+  const MAX_PAGES = 3;
+
+  for (let page = 0; page < MAX_PAGES && matched.length < limit; page++) {
+    const fetchUrl: string = resumptionToken
+      ? `${cleanedBase}?verb=ListRecords&resumptionToken=${encodeURIComponent(resumptionToken)}`
+      : `${cleanedBase}?verb=ListRecords&metadataPrefix=oai_dc`;
+
+    const res: Response = await fetch(fetchUrl, {
+      headers: {
+        Accept: 'application/xml, text/xml, */*',
+        'User-Agent': 'NexusGraph-OAI-Harvester/1.0',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!res.ok) {
+      if (page === 0) throw new Error(`Campus repository returned HTTP ${res.status}.`);
+      break;
+    }
+
+    const xml: string = await res.text();
+    if (!xml.includes('<record')) {
+      if (page === 0) {
+        throw new Error('The OAI-PMH endpoint did not return Dublin Core (<record>) entries.');
+      }
+      break;
+    }
+
+    const pageRecords = parseOaiRecords(xml, cleanedBase);
+    for (const item of pageRecords) {
+      if (seenIds.has(item.externalId)) continue;
+      if (!matchesAbstractKeywords(item.title, item.abstract, terms)) continue;
+
+      seenIds.add(item.externalId);
+      matched.push(item);
+      if (matched.length >= limit) break;
+    }
+
+    const tokenMatch: RegExpMatchArray | null =
+      xml.match(/<resumptionToken[^>]*>([^<]+)<\/resumptionToken>/i);
+    resumptionToken = tokenMatch?.[1]?.trim() || null;
+    if (!resumptionToken) break;
   }
 
-  const matched = allRecords.filter((item) => {
-    const haystack = `${item.title} ${item.abstract} ${item.author} ${item.university}`.toLowerCase();
-    return terms.some((term) => haystack.includes(term));
-  });
-
-  // If keyword filtering finds hits in the first page return them; otherwise return newest records with note
-  return (matched.length > 0 ? matched : allRecords).slice(0, limit);
+  return matched.slice(0, limit);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const sourceType =
-      body?.sourceType === 'oai_pmh' ? 'oai_pmh' : 'openalex';
+    const sourceType = body?.sourceType === 'oai_pmh' ? 'oai_pmh' : 'openalex';
     const query = typeof body?.query === 'string' ? body.query.trim() : '';
     const oaiUrl = typeof body?.oaiUrl === 'string' ? body.oaiUrl.trim() : '';
-    const limitRaw = typeof body?.limit === 'number' ? body.limit : 10;
-    const limit = Math.min(Math.max(Math.round(limitRaw), 1), 20);
+    const limitRaw = typeof body?.limit === 'number' ? body.limit : 30;
+    const limit = Math.min(Math.max(Math.round(limitRaw), 1), 50);
 
     const items =
       sourceType === 'oai_pmh'
@@ -254,4 +339,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

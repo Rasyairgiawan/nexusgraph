@@ -23,6 +23,7 @@ import {
   type SortDirection,
   type TableSortField,
 } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 interface TableViewProps {
   papers: Paper[];
@@ -66,6 +67,7 @@ export function TableView({
   onOpenInGraph,
   onResetFilters,
 }: TableViewProps) {
+  const { t, translateStatus } = useLanguage();
   const [sortField, setSortField] = useState<TableSortField>('similarity');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -124,51 +126,51 @@ export function TableView({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-[#DCE4F0] bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.03)]">
           <div className="text-[11px] font-semibold tracking-wider text-[#5B6B82] uppercase">
-            Total Theses
+            {t('totalTheses')}
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-[26px] font-bold leading-none text-[#0F172A] tabular-nums">
               {stats.count}
             </span>
             <span className="text-[12px] text-[#5B6B82]">
-              of {totalCorpusCount} in Supabase
+              {t('of')} {totalCorpusCount} {t('inSupabase')}
             </span>
           </div>
         </div>
 
         <div className="rounded-xl border border-[#DCE4F0] bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.03)]">
           <div className="text-[11px] font-semibold tracking-wider text-[#5B6B82] uppercase">
-            Verified
+            {t('verified')}
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-[26px] font-bold leading-none text-[#15803D] tabular-nums">
               {stats.verifiedCount}
             </span>
-            <span className="text-[12px] text-[#5B6B82]">peer-verified theses</span>
+            <span className="text-[12px] text-[#5B6B82]">{t('peerVerified')}</span>
           </div>
         </div>
 
         <div className="rounded-xl border border-[#DCE4F0] bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.03)]">
           <div className="text-[11px] font-semibold tracking-wider text-[#5B6B82] uppercase">
-            Available Gaps
+            {t('availableGaps')}
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-[26px] font-bold leading-none text-[#1E2A5A] tabular-nums">
               {stats.availableGapsCount}
             </span>
-            <span className="text-[12px] text-[#5B6B82]">ready to claim</span>
+            <span className="text-[12px] text-[#5B6B82]">{t('readyToClaim')}</span>
           </div>
         </div>
 
         <div className="rounded-xl border border-[#DCE4F0] bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.03)]">
           <div className="text-[11px] font-semibold tracking-wider text-[#5B6B82] uppercase">
-            Claimed Gaps
+            {t('claimedGaps')}
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-[26px] font-bold leading-none text-[#B45309] tabular-nums">
               {stats.claimedGapsCount}
             </span>
-            <span className="text-[12px] text-[#5B6B82]">active follow-ups</span>
+            <span className="text-[12px] text-[#5B6B82]">{t('activeFollowUps')}</span>
           </div>
         </div>
       </div>
@@ -177,10 +179,10 @@ export function TableView({
       <div className="mt-4 overflow-hidden rounded-xl border border-[#DCE4F0] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#DCE4F0] px-4 py-3">
           <div className="flex flex-wrap items-center gap-2 text-[13px]">
-            <span className="font-bold text-[#0F172A]">Thesis Knowledge Matrix</span>
+            <span className="font-bold text-[#0F172A]">{t('matrixTitle')}</span>
             <span className="text-[#8A97AB]">•</span>
             <span className="text-[12px] text-[#5B6B82]">
-              Click any row or action to inspect its 5 research entities or jump to Graph
+              {t('matrixSub')}
             </span>
           </div>
         </div>
@@ -188,14 +190,14 @@ export function TableView({
         {papers.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <p className="text-[13px] text-[#5B6B82]">
-              No theses match the current search or filter settings.
+              {t('noThesesMatch')}
             </p>
             <button
               type="button"
               onClick={onResetFilters}
               className="mt-3 rounded-lg border border-[#DCE4F0] bg-white px-3.5 py-1.5 text-[12px] font-medium text-[#1E2A5A] hover:bg-[#EAF1FE] cursor-pointer"
             >
-              Clear filters
+              {t('clearFilters')}
             </button>
           </div>
         ) : (
@@ -210,7 +212,7 @@ export function TableView({
                         onClick={() => handleSort('title')}
                         className="inline-flex items-center gap-1 hover:text-[#0F172A] cursor-pointer"
                       >
-                        <span>Title &amp; Author</span>
+                        <span>{t('colTitleAuthor')}</span>
                         <SortIcon
                           field="title"
                           activeField={sortField}
@@ -224,7 +226,7 @@ export function TableView({
                         onClick={() => handleSort('year')}
                         className="inline-flex items-center gap-1 hover:text-[#0F172A] cursor-pointer"
                       >
-                        <span>Year</span>
+                        <span>{t('colYear')}</span>
                         <SortIcon
                           field="year"
                           activeField={sortField}
@@ -238,7 +240,7 @@ export function TableView({
                         onClick={() => handleSort('similarity')}
                         className="inline-flex items-center gap-1 hover:text-[#0F172A] cursor-pointer"
                       >
-                        <span>Similarity</span>
+                        <span>{t('colSimilarity')}</span>
                         <SortIcon
                           field="similarity"
                           activeField={sortField}
@@ -246,16 +248,16 @@ export function TableView({
                         />
                       </button>
                     </th>
-                    <th className="px-3 py-3">Problem</th>
-                    <th className="px-3 py-3">Method</th>
-                    <th className="px-3 py-3">Dataset</th>
+                    <th className="px-3 py-3">{t('colProblem')}</th>
+                    <th className="px-3 py-3">{t('colMethod')}</th>
+                    <th className="px-3 py-3">{t('colDataset')}</th>
                     <th className="px-3 py-3 whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => handleSort('status')}
                         className="inline-flex items-center gap-1 hover:text-[#0F172A] cursor-pointer"
                       >
-                        <span>Status</span>
+                        <span>{t('colStatus')}</span>
                         <SortIcon
                           field="status"
                           activeField={sortField}
@@ -264,7 +266,7 @@ export function TableView({
                       </button>
                     </th>
                     <th className="py-3 pl-3 pr-4 text-right whitespace-nowrap">
-                      Actions
+                      {t('colActions')}
                     </th>
                   </tr>
                 </thead>
@@ -304,7 +306,7 @@ export function TableView({
                             <span
                               className={`inline-flex items-center rounded-full border px-1.5 py-0.2 text-[9.5px] font-medium ${sourceBadge.className}`}
                             >
-                              {sourceBadge.label}
+                              {translateStatus(sourceBadge.label)}
                             </span>
                           </div>
                         </td>
@@ -338,17 +340,17 @@ export function TableView({
                             {paper.verified ? (
                               <span className="inline-flex items-center gap-1 rounded-full border border-[#BCE6CA] bg-[#E6F6EC] px-2 py-0.5 text-[10.5px] font-medium text-[#15803D]">
                                 <Check className="h-3 w-3 stroke-[2.5]" />
-                                Verified
+                                {t('verified')}
                               </span>
                             ) : (
                               <span className="inline-flex items-center rounded-full border border-[#DCE4F0] bg-[#EEF2F7] px-2 py-0.5 text-[10.5px] font-medium text-[#475569]">
-                                Unverified
+                                {t('unverified')}
                               </span>
                             )}
                             <span
                               className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${gapBadgeClass}`}
                             >
-                              {gapSummary}
+                              {translateStatus(gapSummary)}
                             </span>
                           </div>
                         </td>
@@ -364,7 +366,7 @@ export function TableView({
                               className="inline-flex h-7 items-center gap-1 rounded-md border border-[#DCE4F0] bg-white px-2.5 text-[11px] font-medium text-[#0F172A] hover:border-[#1E2A5A] hover:text-[#1E2A5A] cursor-pointer"
                             >
                               <Eye className="h-3 w-3" />
-                              <span>Inspect</span>
+                              <span>{t('inspect')}</span>
                             </button>
                             <button
                               type="button"
@@ -372,7 +374,7 @@ export function TableView({
                               className="inline-flex h-7 items-center gap-1 rounded-md border border-[#BFDBFE] bg-[#EAF1FE] px-2.5 text-[11px] font-semibold text-[#1E2A5A] hover:bg-[#DBEAFE] cursor-pointer"
                             >
                               <GitFork className="h-3 w-3" />
-                              <span>Open in Graph</span>
+                              <span>{t('openInGraph')}</span>
                             </button>
                           </div>
                         </td>
@@ -386,15 +388,15 @@ export function TableView({
             {/* Pagination Footer */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#DCE4F0] bg-white px-4 py-3 text-[12px]">
               <span className="text-[#5B6B82]">
-                Showing{' '}
+                {t('showing')}{' '}
                 <strong className="font-semibold text-[#0F172A]">
                   {startIdx + 1}–{Math.min(startIdx + PAGE_SIZE, sortedPapers.length)}
                 </strong>{' '}
-                of{' '}
+                {t('of')}{' '}
                 <strong className="font-semibold text-[#0F172A]">
                   {sortedPapers.length}
                 </strong>{' '}
-                matching theses
+                {t('theses')}
               </span>
 
               <div className="flex items-center gap-2">
@@ -405,10 +407,10 @@ export function TableView({
                   className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#DCE4F0] bg-white px-3 text-[12px] font-medium text-[#0F172A] hover:bg-[#F4F7FB] disabled:opacity-45 cursor-pointer"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
-                  <span>Previous</span>
+                  <span>{t('previous')}</span>
                 </button>
                 <span className="text-[11.5px] font-medium text-[#5B6B82]">
-                  Page {safePage} of {totalPages}
+                  {t('page')} {safePage} {t('of')} {totalPages}
                 </span>
                 <button
                   type="button"
@@ -416,7 +418,7 @@ export function TableView({
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#DCE4F0] bg-white px-3 text-[12px] font-medium text-[#0F172A] hover:bg-[#F4F7FB] disabled:opacity-45 cursor-pointer"
                 >
-                  <span>Next</span>
+                  <span>{t('next')}</span>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>

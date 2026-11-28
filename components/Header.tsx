@@ -13,7 +13,9 @@ import {
   X,
 } from 'lucide-react';
 import type { AppMode, FilterState, ProfileStats, UserProfile } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 import type { AuthModalMode } from './AuthModal';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProfileMenu, type ProfileMenuAction } from './ProfileMenu';
 
 interface HeaderProps {
@@ -42,12 +44,11 @@ interface HeaderProps {
 
 const MODE_OPTIONS: Array<{
   id: AppMode;
-  label: string;
   Icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: 'graph', label: 'Graph', Icon: GitFork },
-  { id: 'table', label: 'Table', Icon: Table2 },
-  { id: 'ai', label: 'AI', Icon: Sparkles },
+  { id: 'graph', Icon: GitFork },
+  { id: 'table', Icon: Table2 },
+  { id: 'ai', Icon: Sparkles },
 ];
 
 export function Header({
@@ -73,6 +74,7 @@ export function Header({
   activeProjectName,
   onExitProjectScope,
 }: HeaderProps) {
+  const { t } = useLanguage();
   const hasActiveFilters =
     filters.year !== 'all' || filters.verifiedOnly || filters.availableGapsOnly;
   return (
@@ -94,7 +96,7 @@ export function Header({
               NexusGraph
             </h1>
             <p className="text-[11px] text-[#5B6B82]">
-              Research Intelligence &amp; Knowledge Continuity
+              {t('subtitle')}
             </p>
           </div>
         </div>
@@ -111,8 +113,8 @@ export function Header({
               type="text"
               value={queryInput}
               onChange={(e) => onQueryInputChange(e.target.value)}
-              aria-label="Semantic thesis search"
-              placeholder="Search research topics, methods, or problems..."
+              aria-label={t('searchPlaceholder')}
+              placeholder={t('searchPlaceholder')}
               className="h-9 w-full rounded-lg border border-[#DCE4F0] bg-[#F4F7FB] pl-9 pr-3 text-[13px] text-[#0F172A] placeholder:text-[#8A97AB] focus:border-[#1E2A5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E2A5A]/15"
             />
           </div>
@@ -121,7 +123,7 @@ export function Header({
             disabled={isLoading}
             className="h-9 rounded-lg border border-[#DCE4F0] bg-[#F4F7FB] px-4 text-[13px] font-medium text-[#0F172A] transition-colors hover:bg-[#EAF1FE] active:border-[#1E2A5A] active:bg-[#1E2A5A] active:text-white focus:border-[#1E2A5A] focus:bg-[#1E2A5A] focus:text-white focus:outline-none disabled:opacity-60 cursor-pointer shrink-0"
           >
-            {isLoading ? 'Searching...' : 'Search'}
+            {isLoading ? t('searchingBtn') : t('searchBtn')}
           </button>
           <button
             type="button"
@@ -138,8 +140,9 @@ export function Header({
         {/* Right: Dynamic counter + Add Thesis + Auth / Profile */}
         <div className="flex items-center gap-2.5 shrink-0">
           <span className="hidden text-[12px] text-[#5B6B82] md:inline">
-            Showing <strong className="font-semibold text-[#0F172A]">{shownCount}</strong> of{' '}
-            <strong className="font-semibold text-[#0F172A]">{totalCount}</strong> theses
+            {t('showing')} <strong className="font-semibold text-[#0F172A]">{shownCount}</strong>{' '}
+            {t('of')}{' '}
+            <strong className="font-semibold text-[#0F172A]">{totalCount}</strong> {t('theses')}
           </span>
 
           <button
@@ -148,9 +151,10 @@ export function Header({
             className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#1E2A5A] px-3 text-[12px] font-semibold text-white shadow-xs transition-colors hover:bg-[#172148] cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Add Thesis</span>
+            <span>{t('addThesis')}</span>
           </button>
 
+          <LanguageSwitcher />
           <ProfileMenu
             user={user}
             stats={profileStats}
@@ -166,12 +170,12 @@ export function Header({
         {/* Left: Filter Pill */}
         <div className="inline-flex flex-wrap items-center gap-x-3.5 gap-y-1.5 rounded-xl border border-[#DCE4F0] bg-[#F4F7FB] px-3 py-1 text-[12px]">
           <span className="text-[11px] font-semibold tracking-wider text-[#5B6B82] uppercase">
-            FILTER:
+            {t('filter')}
           </span>
 
           <div className="flex items-center gap-1.5">
             <label htmlFor="filter-year" className="text-[#5B6B82]">
-              Year
+              {t('year')}
             </label>
             <select
               id="filter-year"
@@ -185,7 +189,7 @@ export function Header({
               }}
               className="h-6 rounded-md border border-[#DCE4F0] bg-white px-2 text-[11.5px] font-medium text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none cursor-pointer"
             >
-              <option value="all">All Years</option>
+              <option value="all">{t('allYears')}</option>
               {availableYears.map((yr) => (
                 <option key={yr} value={String(yr)}>
                   {yr}
@@ -206,7 +210,7 @@ export function Header({
               }
               className="h-3.5 w-3.5 rounded border-[#DCE4F0] accent-[#1E2A5A] cursor-pointer"
             />
-            <span>Verified only</span>
+            <span>{t('verifiedOnly')}</span>
           </label>
 
           <label className="inline-flex items-center gap-1.5 text-[#0F172A] cursor-pointer select-none">
@@ -221,7 +225,7 @@ export function Header({
               }
               className="h-3.5 w-3.5 rounded border-[#DCE4F0] accent-[#1E2A5A] cursor-pointer"
             />
-            <span>Available gaps</span>
+            <span>{t('availableGaps')}</span>
           </label>
 
           {activeProjectName && (
@@ -248,7 +252,7 @@ export function Header({
           aria-label="Workspace View Mode"
           className="inline-flex items-center gap-1 rounded-xl border border-[#DCE4F0] bg-[#F4F7FB] p-1"
         >
-          {MODE_OPTIONS.map(({ id, label, Icon }) => {
+          {MODE_OPTIONS.map(({ id, Icon }) => {
             const isActive = mode === id;
             return (
               <button
@@ -264,7 +268,7 @@ export function Header({
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                <span>{label}</span>
+                <span>{t(id)}</span>
               </button>
             );
           })}
@@ -281,7 +285,7 @@ export function Header({
                 : 'text-[#8A97AB] hover:text-[#5B6B82]'
             }`}
           >
-            Clear filters
+            {t('clearFilters')}
           </button>
         </div>
       </div>

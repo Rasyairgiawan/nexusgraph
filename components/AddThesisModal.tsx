@@ -18,6 +18,7 @@ import {
   streamIngestPdfApi,
 } from '@/lib/api';
 import type { HarvestCandidate, Paper } from '@/types';
+import { useLanguage, type TranslationKey } from '@/lib/i18n';
 
 interface AddThesisModalProps {
   isOpen: boolean;
@@ -27,11 +28,11 @@ interface AddThesisModalProps {
 
 type ModalTab = 'upload' | 'harvest';
 
-const PDF_STEPS = [
-  'Uploading PDF',
-  'Validating Academic Structure (AI Gatekeeper)',
-  'Extracting 5 Entities & Embeddings',
-  'Added to Graph',
+const PDF_STEP_KEYS: TranslationKey[] = [
+  'uploadingPdf',
+  'validatingAcademicStructure',
+  'extractingEntities',
+  'addedToGraph',
 ];
 
 const CAMPUS_PRESETS = [
@@ -54,6 +55,7 @@ export function AddThesisModal({
   onClose,
   onAddedPapers,
 }: AddThesisModalProps) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<ModalTab>('upload');
 
   // Tab 1: Self-Upload PDF
@@ -66,10 +68,10 @@ export function AddThesisModal({
   const [uploadedPaper, setUploadedPaper] = useState<Paper | null>(null);
 
   // Tab 2: Harvest External
-  const [sourceType, setSourceType] = useState<'oai_pmh' | 'openalex'>('openalex');
+  const [sourceType, setSourceType] = useState<'oai_pmh' | 'openalex'>('oai_pmh');
   const [harvestQuery, setHarvestQuery] = useState('');
   const [oaiUrl, setOaiUrl] = useState(CAMPUS_PRESETS[0].url);
-  const [limit, setLimit] = useState<number>(5);
+  const [limit, setLimit] = useState<number>(30);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [harvestError, setHarvestError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<HarvestCandidate[]>([]);
@@ -95,7 +97,7 @@ export function AddThesisModal({
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-      setUploadError('Please choose a PDF file to upload.');
+      setUploadError(t('choosePdfError'));
       return;
     }
 
@@ -136,7 +138,7 @@ export function AddThesisModal({
       setCandidates(items);
       setSelectedIds(new Set(items.map((item) => item.externalId)));
       if (items.length === 0) {
-        setHarvestError('No matching records found. Try another keyword or repository URL.');
+        setHarvestError(t('noMatchingRecords'));
       }
     } catch (err) {
       setHarvestError((err as Error).message || 'Failed to fetch preview.');
@@ -165,14 +167,14 @@ export function AddThesisModal({
   const handleImportSelected = async () => {
     const picked = candidates.filter((c) => selectedIds.has(c.externalId));
     if (picked.length === 0) {
-      setHarvestError('Select at least one thesis record to import.');
+      setHarvestError(t('selectRecordError'));
       return;
     }
 
     setIsImporting(true);
     setHarvestError(null);
     setImportResultMsg(null);
-    setImportProgress('Preparing extraction pipeline...');
+    setImportProgress(t('preparingPipeline'));
 
     try {
       const { imported, skipped } = await streamHarvestIngestApi(picked, (evt) => {
@@ -190,9 +192,15 @@ export function AddThesisModal({
       }
 
       const skipNote =
-        skipped.length > 0 ? ` (${skipped.length} duplicate skipped)` : '';
+        skipped.length > 0
+          ? ` (${skipped.length} ${
+              skipped.length === 1 ? t('duplicateSkipped') : t('duplicatesSkipped')
+            })`
+          : '';
       setImportResultMsg(
-        `Mapped ${imported.length} new thesis node${imported.length === 1 ? '' : 's'} into NexusGraph${skipNote}.`
+        `${t('mapped')} ${imported.length} ${
+          imported.length === 1 ? t('newThesisNode') : t('newThesisNodes')
+        } ${t('intoNexusGraph')}${skipNote}.`
       );
       setImportProgress(null);
     } catch (err) {
@@ -207,7 +215,7 @@ export function AddThesisModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Add Thesis"
+      aria-label={t('addThesis')}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
@@ -217,15 +225,15 @@ export function AddThesisModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#DCE4F0] px-5 py-4">
           <div>
-            <h2 className="text-[16px] font-bold text-[#0F172A]">Add Thesis to NexusGraph</h2>
+            <h2 className="text-[16px] font-bold text-[#0F172A]">{t('addThesisTitle')}</h2>
             <p className="mt-0.5 text-[12px] text-[#5B6B82]">
-              Upload a thesis PDF into your Personal Workspace or harvest open-access repositories.
+              {t('addThesisSub')}
             </p>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            aria-label="Close Add Thesis modal"
+            aria-label={t('close')}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] hover:text-[#0F172A] cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -245,7 +253,7 @@ export function AddThesisModal({
               }`}
             >
               <FileUp className="h-4 w-4" />
-              <span>Self-Upload PDF</span>
+              <span>{t('selfUploadTab')}</span>
             </button>
             <button
               type="button"
@@ -257,7 +265,7 @@ export function AddThesisModal({
               }`}
             >
               <Globe2 className="h-4 w-4" />
-              <span>Import from Indonesian Repo / Open API</span>
+              <span>{t('importRepoTab')}</span>
             </button>
           </div>
         </div>
@@ -289,15 +297,15 @@ export function AddThesisModal({
                   <UploadCloud className="h-5 w-5" />
                 </div>
                 <p className="mt-3 text-[13px] font-semibold text-[#0F172A]">
-                  {selectedFile ? selectedFile.name : 'Drag & drop your thesis PDF here'}
+                  {selectedFile ? selectedFile.name : t('dragDropPdf')}
                 </p>
                 <p className="mt-1 text-[11.5px] text-[#5B6B82]">
                   {selectedFile
-                    ? `${(selectedFile.size / 1024).toFixed(1)} KB · Ready for AI Gatekeeper validation`
-                    : 'Text-readable academic theses or research papers (.pdf)'}
+                    ? `${(selectedFile.size / 1024).toFixed(1)} KB · ${t('pdfReadyForValidation')}`
+                    : t('readablePdfTypes')}
                 </p>
                 <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#DCE4F0] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0F172A] shadow-2xs hover:bg-[#F4F7FB]">
-                  <span>{selectedFile ? 'Change PDF File' : 'Browse PDF File'}</span>
+                  <span>{selectedFile ? t('changePdf') : t('browsePdf')}</span>
                   <input
                     type="file"
                     accept=".pdf,application/pdf"
@@ -313,8 +321,8 @@ export function AddThesisModal({
                   htmlFor="ingest-source-url"
                   className="block text-[12px] font-medium text-[#0F172A]"
                 >
-                  Original Repository URL (Source URL){' '}
-                  <span className="font-normal text-[#8A97AB]">(optional)</span>
+                  {t('originalRepoUrl')}{' '}
+                  <span className="font-normal text-[#8A97AB]">{t('optional')}</span>
                 </label>
                 <input
                   id="ingest-source-url"
@@ -330,10 +338,10 @@ export function AddThesisModal({
               {(isUploading || uploadStep > 0) && (
                 <div className="rounded-xl border border-[#DCE4F0] bg-[#F8FAFC] p-3.5">
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-[#5B6B82]">
-                    Ingest Pipeline Progress
+                    {t('ingestProgress')}
                   </div>
                   <ol className="mt-2.5 space-y-2">
-                    {PDF_STEPS.map((label, idx) => {
+                    {PDF_STEP_KEYS.map((stepKey, idx) => {
                       const stepNum = idx + 1;
                       const isDone = uploadStep > stepNum || (uploadStep === 4 && stepNum === 4);
                       const isCurrent = isUploading && uploadStep === stepNum;
@@ -341,7 +349,7 @@ export function AddThesisModal({
 
                       return (
                         <li
-                          key={label}
+                          key={stepKey}
                           className="flex items-center gap-2.5 text-[12px]"
                         >
                           <span
@@ -374,7 +382,7 @@ export function AddThesisModal({
                                   : 'text-[#8A97AB]'
                             }
                           >
-                            {label}
+                            {t(stepKey)}
                           </span>
                         </li>
                       );
@@ -393,11 +401,11 @@ export function AddThesisModal({
               {uploadedPaper && (
                 <div className="rounded-xl border border-[#BCE6CA] bg-[#E6F6EC] p-3 text-[12px] text-[#15803D]">
                   <div className="font-semibold">
-                    Added &ldquo;{uploadedPaper.title}&rdquo; to your Personal Workspace!
+                  {t('added')} &ldquo;{uploadedPaper.title}&rdquo; {t('toPersonalWorkspace')}
                   </div>
                   <p className="mt-0.5 text-[11.5px]">
-                    Status: Unverified (Personal node). Click &ldquo;Edit &amp; Verify&rdquo; in
-                    the detail drawer to peer-verify entities for the global graph.
+                  {t('colStatus')}: {t('unverified')} ({t('personalLabel')} {t('node')}).
+                  {' '}{t('clickEditVerify')}
                   </p>
                 </div>
               )}
@@ -409,7 +417,7 @@ export function AddThesisModal({
                   disabled={isUploading}
                   className="h-9 rounded-lg border border-[#DCE4F0] px-4 text-[12.5px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
                 >
-                  Close
+                  {t('close')}
                 </button>
                 <button
                   type="submit"
@@ -419,12 +427,12 @@ export function AddThesisModal({
                   {isUploading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Processing PDF...</span>
+                      <span>{t('processingPdf')}</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4" />
-                      <span>Validate &amp; Extract 5 Entities</span>
+                      <span>{t('validateExtract')}</span>
                     </>
                   )}
                 </button>
@@ -444,10 +452,10 @@ export function AddThesisModal({
                   }`}
                 >
                   <div className="text-[12.5px] font-bold text-[#0F172A]">
-                    Campus Repository (OAI-PMH / EPrints / DSpace)
+                    {t('campusRepository')}
                   </div>
                   <div className="mt-0.5 text-[11px] text-[#5B6B82]">
-                    Harvest Indonesian campus e-theses XML records live
+                    {t('campusHarvestDescription')}
                   </div>
                 </button>
 
@@ -461,10 +469,10 @@ export function AddThesisModal({
                   }`}
                 >
                   <div className="text-[12.5px] font-bold text-[#0F172A]">
-                    OpenAlex / Open-Access API
+                    {t('openAlexApi')}
                   </div>
                   <div className="mt-0.5 text-[11px] text-[#5B6B82]">
-                    Search open academic works &amp; abstracts globally
+                    {t('openAlexDescription')}
                   </div>
                 </button>
               </div>
@@ -477,7 +485,7 @@ export function AddThesisModal({
                       htmlFor="harvest-oai-url"
                       className="block text-[12px] font-medium text-[#0F172A]"
                     >
-                      Campus OAI-PMH Endpoint URL
+                      {t('campusEndpoint')}
                     </label>
                     <input
                       id="harvest-oai-url"
@@ -508,14 +516,15 @@ export function AddThesisModal({
                       htmlFor="harvest-keyword"
                       className="block text-[12px] font-medium text-[#0F172A]"
                     >
-                      Search Keyword {sourceType === 'oai_pmh' ? '(optional filter)' : ''}
+                      {t('searchKeyword')}{' '}
+                      {sourceType === 'oai_pmh' ? t('optionalFilter') : ''}
                     </label>
                     <input
                       id="harvest-keyword"
                       type="text"
                       value={harvestQuery}
                       onChange={(e) => setHarvestQuery(e.target.value)}
-                      placeholder="e.g., sentiment analysis, deep learning, recommender"
+                      placeholder={t('keywordExamplePlaceholder')}
                       className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] px-3 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none"
                     />
                   </div>
@@ -525,7 +534,7 @@ export function AddThesisModal({
                       htmlFor="harvest-limit"
                       className="block text-[12px] font-medium text-[#0F172A]"
                     >
-                      Result Limit
+                      {t('resultLimit')}
                     </label>
                     <select
                       id="harvest-limit"
@@ -533,9 +542,10 @@ export function AddThesisModal({
                       onChange={(e) => setLimit(Number(e.target.value))}
                       className="mt-1 h-9 w-full rounded-lg border border-[#DCE4F0] bg-white px-2.5 text-[12.5px] text-[#0F172A] focus:border-[#1E2A5A] focus:outline-none cursor-pointer"
                     >
-                      <option value={5}>5 results</option>
-                      <option value={10}>10 results</option>
-                      <option value={20}>20 results</option>
+                      <option value={20}>20 {t('results')}</option>
+                      <option value={30}>30 {t('results')}</option>
+                      <option value={40}>40 {t('results')}</option>
+                      <option value={50}>50 {t('results')}</option>
                     </select>
                   </div>
 
@@ -547,10 +557,10 @@ export function AddThesisModal({
                     {isFetchingPreview ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Fetching...</span>
+                        <span>{t('fetching')}</span>
                       </>
                     ) : (
-                      <span>Fetch Preview</span>
+                      <span>{t('fetchingPreview')}</span>
                     )}
                   </button>
                 </div>
@@ -582,15 +592,20 @@ export function AddThesisModal({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[11.5px] text-[#5B6B82]">
                     <span>
-                      Found <strong className="text-[#0F172A]">{candidates.length}</strong> records ·{' '}
-                      <strong className="text-[#1E2A5A]">{selectedIds.size}</strong> selected
+                      {t('foundRecords')}{' '}
+                      <strong className="text-[#0F172A]">{candidates.length}</strong>{' '}
+                      {t('records')} ·{' '}
+                      <strong className="text-[#1E2A5A]">{selectedIds.size}</strong>{' '}
+                      {t('selected')}
                     </span>
                     <button
                       type="button"
                       onClick={toggleSelectAll}
                       className="font-medium text-[#1E2A5A] hover:underline cursor-pointer"
                     >
-                      {selectedIds.size === candidates.length ? 'Deselect all' : 'Select all'}
+                      {selectedIds.size === candidates.length
+                        ? t('deselectAll')
+                        : t('selectAll')}
                     </button>
                   </div>
 
@@ -628,7 +643,7 @@ export function AddThesisModal({
                                     onClick={(e) => e.stopPropagation()}
                                     className="inline-flex items-center gap-1 text-[11px] font-medium text-[#1E2A5A] hover:underline"
                                   >
-                                    <span>Source</span>
+                                    <span>{t('source')}</span>
                                     <ExternalLink className="h-3 w-3" />
                                   </a>
                                 )}
@@ -653,7 +668,7 @@ export function AddThesisModal({
                       disabled={isImporting}
                       className="h-9 rounded-lg border border-[#DCE4F0] px-4 text-[12.5px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
                     >
-                      Close
+                      {t('close')}
                     </button>
                     <button
                       type="button"
@@ -664,12 +679,12 @@ export function AddThesisModal({
                       {isImporting ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Importing...</span>
+                          <span>{t('importing')}</span>
                         </>
                       ) : (
                         <>
                           <Sparkles className="h-4 w-4" />
-                          <span>Import &amp; Map to Graph ({selectedIds.size})</span>
+                          <span>{t('importMapGraph')} ({selectedIds.size})</span>
                         </>
                       )}
                     </button>

@@ -3,6 +3,8 @@ import { embedTextWithGemini } from '@/lib/gemini';
 import {
   fetchAllThesesSafe,
   getAdminSupabase,
+  getAuthenticatedSession,
+  getUserProfileRecord,
   isSchemaMissingError,
   type RawThesisRow,
 } from '@/lib/serverSupabase';
@@ -33,9 +35,56 @@ function normalizeThesisRow(row: RawThesisRow) {
 
 export async function GET(req: NextRequest) {
   try {
-    void req.nextUrl;
-    const rows = await fetchAllThesesSafe();
-    const results = rows.map(normalizeThesisRow);
+    const { user } = await getAuthenticatedSession(req);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required.', count: 0, results: [] },
+        { status: 401 }
+      );
+    }
+
+    const allRows = await fetchAllThesesSafe();
+    const profile = await getUserProfileRecord(user);
+    const interests = profile.researchInterests?.trim();
+
+    // Jika user login dan punya Research Interests, urutkan data berdasarkan interest
+    if (interests) {
+      try {
+        const interestEmbedding = await embedTextWithGemini(interests);
+        const admin = getAdminSupabase();
+        const { data: vecMatches, error } = await admin.rpc('match_theses', {
+          query_embedding: interestEmbedding,
+          match_threshold: 0.1,
+          match_count: Math.max(allRows.length, 100),
+        });
+
+        if (!error && Array.isArray(vecMatches) && vecMatches.length > 0) {
+          const byId = new Map(allRows.map((row) => [row.id, row]));
+          const rankedIds = new Set<string>();
+          const ranked = (vecMatches as RawThesisRow[])
+            .flatMap((m) => {
+              const full = byId.get(m.id);
+              if (!full || rankedIds.has(m.id)) return [];
+              rankedIds.add(m.id);
+              return [normalizeThesisRow({ ...full, similarity: m.similarity })];
+            });
+          const unranked = allRows
+            .filter((row) => !rankedIds.has(row.id))
+            .map(normalizeThesisRow);
+          const results = [...ranked, ...unranked];
+
+          return NextResponse.json({
+            count: results.length,
+            personalizedBy: interests,
+            results,
+          });
+        }
+      } catch {
+        // Fallback ke daftar standar jika embedding gagal
+      }
+    }
+
+    const results = allRows.map(normalizeThesisRow);
     return NextResponse.json({ count: results.length, results });
   } catch (err) {
     return NextResponse.json(
@@ -47,6 +96,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const { user } = await getAuthenticatedSession(req);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required.', count: 0, results: [] },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const query = typeof body?.query === 'string' ? body.query.trim() : '';
     const threshold = typeof body?.threshold === 'number' ? body.threshold : 0.45;
@@ -70,7 +127,6 @@ export async function POST(req: NextRequest) {
     }
 
     const matchedRows = (data || []) as RawThesisRow[];
-    // Enrich matched rows with any extended columns if RPC returned base shape
     const allRows = await fetchAllThesesSafe();
     const byId = new Map(allRows.map((row) => [row.id, row]));
 

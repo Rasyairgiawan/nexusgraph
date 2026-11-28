@@ -21,6 +21,10 @@ node_modules/
 # production
 /build
 
+# environment variables
+.env*
+!.env.example
+
 # misc
 .DS_Store
 # dependencies

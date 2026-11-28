@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { ProfileStats, UserProfile } from '@/types';
 import type { AuthModalMode } from './AuthModal';
+import { useLanguage } from '@/lib/i18n';
 
 export type ProfileMenuAction =
   | 'open_profile'
@@ -40,6 +41,7 @@ export function ProfileMenu({
   onSelectAction,
   onLogout,
 }: ProfileMenuProps) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -70,7 +72,7 @@ export function ProfileMenu({
         onClick={() => onOpenAuth('signin')}
         className="inline-flex h-8 items-center rounded-lg bg-[#1E2A5A] px-3.5 text-[12px] font-semibold text-white shadow-xs transition-colors hover:bg-[#1D4ED8] cursor-pointer"
       >
-        Sign In
+        {t('signIn')}
       </button>
     );
   }
@@ -89,7 +91,7 @@ export function ProfileMenu({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        aria-label="Open researcher profile menu"
+        aria-label={t('researcherProfile')}
         className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#DCE4F0] bg-[#F8FAFC] pl-1 pr-2 text-[12px] font-medium text-[#0F172A] transition-colors hover:border-[#1E2A5A] hover:bg-[#EAF1FE] cursor-pointer"
       >
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1E2A5A] text-[10.5px] font-bold text-white">
@@ -134,19 +136,19 @@ export function ProfileMenu({
                 <div className="text-[13px] font-bold text-[#0F172A] tabular-nums">
                   {stats.savedThesesCount}
                 </div>
-                <div className="text-[10px] text-[#5B6B82]">Saved</div>
+                <div className="text-[10px] text-[#5B6B82]">{t('saved')}</div>
               </div>
               <div>
                 <div className="text-[13px] font-bold text-[#0F172A] tabular-nums">
                   {stats.projectsCount}
                 </div>
-                <div className="text-[10px] text-[#5B6B82]">Projects</div>
+                <div className="text-[10px] text-[#5B6B82]">{t('projects')}</div>
               </div>
               <div>
                 <div className="text-[13px] font-bold text-[#B45309] tabular-nums">
                   {stats.claimedGapsCount}
                 </div>
-                <div className="text-[10px] text-[#5B6B82]">Claimed</div>
+                <div className="text-[10px] text-[#5B6B82]">{t('claimed')}</div>
               </div>
             </div>
           </div>
@@ -160,7 +162,7 @@ export function ProfileMenu({
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[#0F172A] hover:bg-[#EAF1FE] hover:text-[#1E2A5A] cursor-pointer"
             >
               <UserCircle2 className="h-4 w-4 text-[#1E2A5A]" />
-              <span>Researcher Profile</span>
+              <span>{t('researcherProfile')}</span>
             </button>
             <button
               type="button"
@@ -169,7 +171,7 @@ export function ProfileMenu({
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[#0F172A] hover:bg-[#EAF1FE] hover:text-[#1E2A5A] cursor-pointer"
             >
               <Lightbulb className="h-4 w-4 text-[#B45309]" />
-              <span>My Claimed Research Gaps</span>
+              <span>{t('myClaimedGaps')}</span>
             </button>
             <button
               type="button"
@@ -178,7 +180,7 @@ export function ProfileMenu({
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[#0F172A] hover:bg-[#EAF1FE] hover:text-[#1E2A5A] cursor-pointer"
             >
               <FolderKanban className="h-4 w-4 text-[#5B6B82]" />
-              <span>My Projects</span>
+              <span>{t('myProjects')}</span>
             </button>
             <button
               type="button"
@@ -187,7 +189,7 @@ export function ProfileMenu({
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[#0F172A] hover:bg-[#EAF1FE] hover:text-[#1E2A5A] cursor-pointer"
             >
               <MessageSquare className="h-4 w-4 text-[#5B6B82]" />
-              <span>Chat History</span>
+              <span>{t('chatHistory')}</span>
             </button>
           </div>
 
@@ -202,7 +204,7 @@ export function ProfileMenu({
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-medium text-[#DC2626] hover:bg-[#FEF2F2] cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
+              <span>{t('signOut')}</span>
             </button>
           </div>
         </div>

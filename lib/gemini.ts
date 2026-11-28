@@ -1,9 +1,9 @@
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 const GENERATION_MODELS = [
-  'gemini-flash-lite-latest',
   'gemini-2.5-flash',
   'gemini-flash-latest',
+  'gemini-flash-lite-latest',
 ];
 
 function getGeminiApiKey(): string {

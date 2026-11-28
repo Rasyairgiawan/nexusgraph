@@ -21,6 +21,7 @@ import {
   type GapClaim,
 } from '@/lib/claims';
 import type { Paper, UserProfile } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 interface ProfileDrawerProps {
   user: UserProfile;
@@ -47,6 +48,7 @@ export function ProfileDrawer({
   onOpenThesisInGraph,
   onSignOutConfirmed,
 }: ProfileDrawerProps) {
+  const { t, translateStatus } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(user.fullName);
   const [institution, setInstitution] = useState(user.institution);
@@ -162,23 +164,23 @@ export function ProfileDrawer({
       />
 
       <aside
-        aria-label="Researcher Profile Drawer"
+        aria-label={t('researcherProfile')}
         className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[430px] flex-col border-l border-[#DCE4F0] bg-white shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#DCE4F0] px-5 py-4">
           <div>
             <h2 className="text-[16px] font-bold text-[#0F172A]">
-              Researcher Profile
+              {t('researcherProfile')}
             </h2>
             <p className="text-[11.5px] text-[#5B6B82]">
-              Unified academic identity &amp; research contributions
+              {t('profileDescription')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close profile drawer"
+            aria-label={t('closeProfileDrawer')}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#DCE4F0] text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -214,7 +216,7 @@ export function ProfileDrawer({
                   className="inline-flex h-7 items-center gap-1 rounded-md border border-[#DCE4F0] bg-white px-2.5 text-[11px] font-medium text-[#0F172A] hover:border-[#1E2A5A] hover:text-[#1E2A5A] cursor-pointer"
                 >
                   <Pencil className="h-3 w-3" />
-                  <span>Edit</span>
+                  <span>{t('edit')}</span>
                 </button>
               )}
             </div>
@@ -223,7 +225,7 @@ export function ProfileDrawer({
               <form onSubmit={handleSaveProfile} className="mt-4 space-y-2.5">
                 <div>
                   <label className="block text-[11px] font-semibold text-[#5B6B82]">
-                    Full Name
+                    {t('fullName')}
                   </label>
                   <input
                     type="text"
@@ -236,7 +238,7 @@ export function ProfileDrawer({
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[11px] font-semibold text-[#5B6B82]">
-                      Institution
+                      {t('institution')}
                     </label>
                     <input
                       type="text"
@@ -247,7 +249,7 @@ export function ProfileDrawer({
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-[#5B6B82]">
-                      Major / Program
+                      {t('majorProgram')}
                     </label>
                     <input
                       type="text"
@@ -260,7 +262,7 @@ export function ProfileDrawer({
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[11px] font-semibold text-[#5B6B82]">
-                      Student ID (NIM)
+                      {t('studentId')}
                     </label>
                     <input
                       type="text"
@@ -271,7 +273,7 @@ export function ProfileDrawer({
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-[#5B6B82]">
-                      Research Interests
+                      {t('researchInterests')}
                     </label>
                     <input
                       type="text"
@@ -292,7 +294,7 @@ export function ProfileDrawer({
                     onClick={() => setIsEditing(false)}
                     className="h-8 rounded-lg border border-[#DCE4F0] bg-white px-3 text-[11.5px] font-medium text-[#5B6B82] cursor-pointer"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button
                     type="submit"
@@ -304,7 +306,7 @@ export function ProfileDrawer({
                     ) : (
                       <Check className="h-3 w-3" />
                     )}
-                    <span>Save</span>
+                    <span>{t('save')}</span>
                   </button>
                 </div>
               </form>
@@ -312,34 +314,34 @@ export function ProfileDrawer({
               <div className="mt-3.5 grid grid-cols-2 gap-2.5 border-t border-[#DCE4F0] pt-3 text-[12px]">
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8A97AB]">
-                    Institution
+                    {t('institution')}
                   </div>
                   <div className="mt-0.5 font-medium text-[#0F172A]">
-                    {user.institution || 'Not set'}
+                    {user.institution || t('notSet')}
                   </div>
                 </div>
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8A97AB]">
-                    Major
+                    {t('major')}
                   </div>
                   <div className="mt-0.5 font-medium text-[#0F172A]">
-                    {user.major || 'Not set'}
+                    {user.major || t('notSet')}
                   </div>
                 </div>
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8A97AB]">
-                    NIM / ID
+                    {t('nimLabel')}
                   </div>
                   <div className="mt-0.5 font-medium text-[#0F172A]">
-                    {user.nim || 'Not set'}
+                    {user.nim || t('notSet')}
                   </div>
                 </div>
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8A97AB]">
-                    Interests
+                    {t('interests')}
                   </div>
                   <div className="mt-0.5 font-medium text-[#0F172A]">
-                    {user.researchInterests || 'Not set'}
+                    {user.researchInterests || t('notSet')}
                   </div>
                 </div>
               </div>
@@ -350,7 +352,7 @@ export function ProfileDrawer({
           <section>
             <div className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#0F172A]">
               <Lightbulb className="h-4 w-4 text-[#B45309]" />
-              <span>My Claimed Research Gaps ({myActiveClaims.length})</span>
+              <span>{t('myClaimedGaps')} ({myActiveClaims.length})</span>
             </div>
 
             {claimActionError && (
@@ -361,7 +363,7 @@ export function ProfileDrawer({
 
             {myActiveClaims.length === 0 ? (
               <p className="mt-1.5 rounded-xl border border-dashed border-[#DCE4F0] p-3 text-[12px] text-[#8A97AB]">
-                No active research gap claims right now.
+                {t('noActiveClaims')}
               </p>
             ) : (
               <div className="mt-2 space-y-2">
@@ -386,9 +388,11 @@ export function ProfileDrawer({
                               : 'bg-[#FEF3C7] text-[#B45309]'
                           }`}
                         >
-                          {isExploring
-                            ? `Exploring${expiryText ? ` · ${expiryText}` : ''}`
-                            : 'In Progress'}
+                          {translateStatus(
+                            isExploring
+                              ? `Exploring${expiryText ? ` · ${expiryText}` : ''}`
+                              : 'In Progress'
+                          )}
                         </span>
 
                         {paper && (
@@ -401,7 +405,7 @@ export function ProfileDrawer({
                             className="inline-flex items-center gap-1 text-[11px] font-medium text-[#1E2A5A] hover:underline cursor-pointer"
                           >
                             <GitFork className="h-3 w-3" />
-                            <span>Open in Graph</span>
+                            <span>{t('openInGraph')}</span>
                           </button>
                         )}
                       </div>
@@ -424,7 +428,7 @@ export function ProfileDrawer({
                             className="inline-flex h-7 items-center gap-1 rounded-md bg-[#1E2A5A] px-2.5 text-[11px] font-semibold text-white hover:bg-[#1D4ED8] disabled:opacity-55 cursor-pointer"
                           >
                             {isBusy && <Loader2 className="h-3 w-3 animate-spin" />}
-                            <span>Mark as In Progress</span>
+                            <span>{t('markInProgress')}</span>
                           </button>
                         )}
 
@@ -436,7 +440,7 @@ export function ProfileDrawer({
                           }
                           className="inline-flex h-7 items-center rounded-md border border-[#FECACA] bg-white px-2.5 text-[11px] font-medium text-[#DC2626] hover:bg-[#FEF2F2] disabled:opacity-55 cursor-pointer"
                         >
-                          Release Claim
+                          {t('releaseClaim')}
                         </button>
                       </div>
                     </div>
@@ -450,12 +454,11 @@ export function ProfileDrawer({
           <section>
             <div className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#0F172A]">
               <ShieldCheck className="h-4 w-4 text-[#15803D]" />
-              <span>My Verified Theses ({verifiedTheses.length})</span>
+              <span>{t('myVerifiedTheses')} ({verifiedTheses.length})</span>
             </div>
             {verifiedTheses.length === 0 ? (
               <p className="mt-1.5 rounded-xl border border-dashed border-[#DCE4F0] p-3 text-[12px] text-[#8A97AB]">
-                Verify AI-extracted thesis entities via &ldquo;Edit &amp; Verify&rdquo; to build
-                campus trust.
+                {t('verifyEntitiesDescription')}
               </p>
             ) : (
               <div className="mt-2 space-y-2">
@@ -470,8 +473,8 @@ export function ProfileDrawer({
                     className="w-full rounded-xl border border-[#DCE4F0] bg-white p-3 text-left hover:border-[#1E2A5A] cursor-pointer"
                   >
                     <div className="flex items-center justify-between text-[11px] text-[#15803D]">
-                      <span>{paper.year} · Verified</span>
-                      <span className="text-[#1E2A5A]">Open in Graph</span>
+                      <span>{paper.year} · {t('verified')}</span>
+                      <span className="text-[#1E2A5A]">{t('openInGraph')}</span>
                     </div>
                     <div className="mt-0.5 text-[12.5px] font-bold text-[#0F172A] line-clamp-1">
                       {paper.title}
@@ -486,11 +489,11 @@ export function ProfileDrawer({
           <section>
             <div className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#0F172A]">
               <FileText className="h-4 w-4 text-[#4338CA]" />
-              <span>My Uploaded / Imported Theses ({uploadedTheses.length})</span>
+              <span>{t('myUploadedTheses')} ({uploadedTheses.length})</span>
             </div>
             {uploadedTheses.length === 0 ? (
               <p className="mt-1.5 rounded-xl border border-dashed border-[#DCE4F0] p-3 text-[12px] text-[#8A97AB]">
-                No personal uploads or imports linked to this account yet.
+                {t('noPersonalUploads')}
               </p>
             ) : (
               <div className="mt-2 space-y-2">
@@ -506,7 +509,7 @@ export function ProfileDrawer({
                   >
                     <div className="flex items-center justify-between text-[11px] text-[#5B6B82]">
                       <span>{paper.year} · {paper.fileName}</span>
-                      <span className="text-[#1E2A5A]">Open in Graph</span>
+                      <span className="text-[#1E2A5A]">{t('openInGraph')}</span>
                     </div>
                     <div className="mt-0.5 text-[12.5px] font-bold text-[#0F172A] line-clamp-1">
                       {paper.title}
@@ -520,11 +523,10 @@ export function ProfileDrawer({
           <div className="rounded-xl border border-[#DCE4F0] bg-[#F8FAFC] p-3 text-[11.5px] text-[#5B6B82]">
             <div className="flex items-center gap-1.5 font-semibold text-[#0F172A]">
               <GraduationCap className="h-3.5 w-3.5 text-[#1E2A5A]" />
-              <span>Unified Researcher Workspace</span>
+              <span>{t('unifiedWorkspace')}</span>
             </div>
             <p className="mt-1 leading-relaxed">
-              Every NexusGraph account can upload theses, verify extracted entities, claim
-              open research gaps, and curate project workspaces.
+              {t('workspaceDescription')}
             </p>
           </div>
         </div>
@@ -534,7 +536,7 @@ export function ProfileDrawer({
           {confirmSignOut ? (
             <div className="flex items-center justify-between gap-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-3 py-2">
               <span className="text-[12px] font-medium text-[#B91C1C]">
-                Sign out from NexusGraph?
+                {t('signOutQuestion')}
               </span>
               <div className="flex items-center gap-1.5">
                 <button
@@ -542,7 +544,7 @@ export function ProfileDrawer({
                   onClick={() => setConfirmSignOut(false)}
                   className="h-7 rounded-md border border-[#DCE4F0] bg-white px-2.5 text-[11.5px] font-medium text-[#5B6B82] cursor-pointer"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="button"
@@ -551,7 +553,7 @@ export function ProfileDrawer({
                   className="inline-flex h-7 items-center gap-1 rounded-md bg-[#DC2626] px-2.5 text-[11.5px] font-semibold text-white hover:bg-[#B91C1C] cursor-pointer"
                 >
                   {isSigningOut && <Loader2 className="h-3 w-3 animate-spin" />}
-                  <span>Sign Out</span>
+                  <span>{t('signOut')}</span>
                 </button>
               </div>
             </div>
@@ -562,7 +564,7 @@ export function ProfileDrawer({
               className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-[#FECACA] bg-white text-[12.5px] font-semibold text-[#DC2626] hover:bg-[#FEF2F2] cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
+              <span>{t('signOut')}</span>
             </button>
           )}
         </div>
@@ -573,7 +575,7 @@ export function ProfileDrawer({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Confirm Release Claim"
+          aria-label={t('confirmReleaseDialog')}
           onClick={(e) => {
             if (e.target === e.currentTarget && !claimBusyId) {
               setReleaseCandidate(null);
@@ -583,15 +585,15 @@ export function ProfileDrawer({
         >
           <div className="w-full max-w-[400px] rounded-2xl border border-[#DCE4F0] bg-white p-5 shadow-2xl">
             <h3 className="text-[15px] font-bold text-[#0F172A]">
-              Release Research Gap Claim?
+              {t('releaseClaimTitle')}
             </h3>
             <p className="mt-1.5 text-[12px] leading-relaxed text-[#5B6B82]">
-              Releasing your claim on{' '}
+              {t('releaseClaimDescription')}{' '}
               <strong className="text-[#0F172A]">{releaseCandidate.thesisTitle}</strong>{' '}
-              removes it from your active claims and lets you re-claim it later if needed.
+              {t('releaseClaimSuffix')}
             </p>
             <div className="mt-3 rounded-lg border border-[#DCE4F0] bg-[#F8FAFC] p-2.5 text-[11.5px] text-[#5B6B82]">
-              Angle: {releaseCandidate.claim.planned_angle}
+              {t('angle')} {releaseCandidate.claim.planned_angle}
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -600,7 +602,7 @@ export function ProfileDrawer({
                 onClick={() => setReleaseCandidate(null)}
                 className="h-8 rounded-lg border border-[#DCE4F0] px-3.5 text-[12px] font-medium text-[#5B6B82] hover:bg-[#F4F7FB] cursor-pointer"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="button"
@@ -611,7 +613,7 @@ export function ProfileDrawer({
                 {claimBusyId === releaseCandidate.claim.id && (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 )}
-                <span>Confirm Release</span>
+                <span>{t('confirmRelease')}</span>
               </button>
             </div>
           </div>

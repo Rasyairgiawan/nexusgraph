@@ -101,9 +101,27 @@ export function NexusDashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const [thesesList, sessionData, activeClaims] = await Promise.all([
+        const sessionData = await fetchAuthSessionApi();
+        if (cancelled) return;
+
+        if (!sessionData.user) {
+          setCurrentUser(null);
+          setAllPapers([]);
+          setSearchResults([]);
+          setClaims([]);
+          setAuthModalMode('signin');
+          return;
+        }
+
+        setCurrentUser(sessionData.user);
+        setProjects(sessionData.projects);
+        setConversations(sessionData.conversations);
+        if (sessionData.projects.length > 0) {
+          setActiveProjectId(sessionData.projects[0].id);
+        }
+
+        const [thesesList, activeClaims] = await Promise.all([
           fetchAllPapersFromApi(),
-          fetchAuthSessionApi(),
           fetchGapClaimsApi(),
         ]);
         if (cancelled) return;
@@ -111,12 +129,6 @@ export function NexusDashboard() {
         setSearchResults(thesesList);
         setClaims(activeClaims);
         setClaimsNow(Date.now());
-        setCurrentUser(sessionData.user);
-        setProjects(sessionData.projects);
-        setConversations(sessionData.conversations);
-        if (sessionData.projects.length > 0) {
-          setActiveProjectId(sessionData.projects[0].id);
-        }
       } catch (err) {
         if (!cancelled) {
           setApiError((err as Error).message || 'Failed to load theses from Supabase.');
@@ -260,19 +272,8 @@ export function NexusDashboard() {
     }
   };
 
-  const handleAddedPapers = (newPapers: Paper[]) => {
+  const handleAddedPapers = async (newPapers: Paper[]) => {
     if (newPapers.length === 0) return;
-    setAllPapers((prev) => {
-      const existingIds = new Set(prev.map((p) => p.id));
-      const uniqueNew = newPapers.filter((p) => !existingIds.has(p.id));
-      return [...uniqueNew, ...prev];
-    });
-    setSearchResults((prev) => {
-      const existingIds = new Set(prev.map((p) => p.id));
-      const uniqueNew = newPapers.filter((p) => !existingIds.has(p.id));
-      return [...uniqueNew, ...prev];
-    });
-    setSelectedPaperId(newPapers[0].id);
 
     if (currentUser) {
       setCurrentUser((prev) => {
@@ -281,6 +282,29 @@ export function NexusDashboard() {
         newPapers.forEach((p) => nextUploaded.add(p.id));
         return { ...prev, uploadedThesisIds: Array.from(nextUploaded) };
       });
+    }
+
+    try {
+      setIsLoading(true);
+      setApiError(null);
+      const activeQuery = submittedQuery.trim();
+      const refreshed = activeQuery
+        ? await searchPapersFromApi(activeQuery, 0.3, 50)
+        : await fetchAllPapersFromApi();
+      if (!activeQuery) {
+        setAllPapers(refreshed);
+      }
+      setSearchResults(refreshed);
+
+      if (refreshed.some((paper) => paper.id === newPapers[0].id)) {
+        setSelectedPaperId(newPapers[0].id);
+      }
+    } catch (err) {
+      setApiError(
+        (err as Error).message || 'Failed to refresh thesis similarity after import.'
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -366,11 +390,17 @@ export function NexusDashboard() {
   const handleSignOut = async () => {
     await signOutApi();
     setCurrentUser(null);
+    setAllPapers([]);
+    setSearchResults([]);
+    setClaims([]);
+    setSelectedPaperId(null);
     setProjects([]);
     setConversations([]);
     setActiveProjectId(null);
     setScopedProjectId(null);
     setActiveConversationId(null);
+    setIsProfileDrawerOpen(false);
+    setAuthModalMode('signin');
   };
 
   return (
@@ -600,14 +630,34 @@ export function NexusDashboard() {
       {authModalMode && (
         <AuthModal
           mode={authModalMode}
+          required={!currentUser}
           onModeChange={setAuthModalMode}
-          onClose={() => setAuthModalMode(null)}
-          onAuthenticated={(payload) => {
+          onClose={() => {
+            if (currentUser) setAuthModalMode(null);
+          }}
+          onAuthenticated={async (payload) => {
             setCurrentUser(payload.user);
+            setAuthModalMode(null);
             setProjects(payload.projects);
             setConversations(payload.conversations);
             if (payload.projects.length > 0) {
               setActiveProjectId(payload.projects[0].id);
+            }
+            try {
+              setIsLoading(true);
+              setApiError(null);
+              const [personalized, activeClaims] = await Promise.all([
+                fetchAllPapersFromApi(),
+                fetchGapClaimsApi(),
+              ]);
+              setAllPapers(personalized);
+              setSearchResults(personalized);
+              setClaims(activeClaims);
+              setClaimsNow(Date.now());
+            } catch (err) {
+              setApiError((err as Error).message || 'Failed to reload personalized theses.');
+            } finally {
+              setIsLoading(false);
             }
           }}
         />

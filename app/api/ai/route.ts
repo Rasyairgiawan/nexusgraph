@@ -9,6 +9,8 @@ import {
 } from '@/lib/serverSupabase';
 import type { AiNextAction } from '@/types';
 
+export const maxDuration = 60;
+
 interface RagJsonResponse {
   answer: string;
   citedIds?: string[];
@@ -20,10 +22,39 @@ interface RagJsonResponse {
   }>;
 }
 
+function stripEmojis(text: string): string {
+  return text
+    .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function replaceRawThesisIds(
+  text: string,
+  thesisMap: Map<string, RawThesisRow>,
+  fallbackLabel: string
+): string {
+  return text
+    .split(/(\[\[cite:[^\]]+\]\])/g)
+    .map((part) => {
+      if (/^\[\[cite:[^\]]+\]\]$/.test(part)) return part;
+      return part.replace(
+        /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+        (id) => thesisMap.get(id)?.title || fallbackLabel
+      );
+    })
+    .join('');
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const message = typeof body?.message === 'string' ? body.message.trim() : '';
+    const language = body?.language === 'id' ? 'id' : 'en';
+    const responseLanguageInstruction =
+      language === 'id'
+        ? 'Respond strictly in clear, formal, scholarly BAHASA INDONESIA.'
+        : 'Respond strictly in clear, formal, scholarly ENGLISH.';
     const selectedThesisId =
       typeof body?.selectedThesisId === 'string' ? body.selectedThesisId : null;
     const queryContext =
@@ -65,12 +96,20 @@ export async function POST(req: NextRequest) {
     if (scoped.length === 0) {
       return NextResponse.json({
         answer:
-          'No theses currently match your active filters in Supabase, so I cannot answer from grounded thesis records yet. Try resetting your filters or adding new theses to analyze.',
+          language === 'id'
+            ? 'Tidak ada skripsi yang cocok dengan filter aktif di Supabase, sehingga saya belum dapat menjawab berdasarkan data skripsi. Coba reset filter atau tambahkan skripsi untuk dianalisis.'
+            : 'No theses currently match your active filters in Supabase, so I cannot answer from grounded thesis records yet. Try resetting your filters or adding new theses to analyze.',
         citations: [],
         relatedThesisIds: [],
         nextActions: [
-          { label: 'Clear active filters', type: 'clear_filters' },
-          { label: 'Switch to Graph view', type: 'open_graph' },
+          {
+            label: language === 'id' ? 'Reset filter aktif' : 'Clear active filters',
+            type: 'clear_filters',
+          },
+          {
+            label: language === 'id' ? 'Buka tampilan Graf' : 'Switch to Graph view',
+            type: 'open_graph',
+          },
         ] satisfies AiNextAction[],
       });
     }
@@ -92,10 +131,25 @@ export async function POST(req: NextRequest) {
         for (const m of vecMatches as Array<{ id: string; similarity?: number }>) {
           simById.set(m.id, m.similarity ?? 0.5);
         }
+        const queryTerms = queryText
+          .toLowerCase()
+          .split(/\s+/)
+          .map((term) => term.trim())
+          .filter((term) => term.length >= 3);
         rankedRows = [...scoped].sort((a, b) => {
           if (a.id === selectedThesisId) return -1;
           if (b.id === selectedThesisId) return 1;
-          return (simById.get(b.id) ?? 0) - (simById.get(a.id) ?? 0);
+          const keywordScore = (row: RawThesisRow) => {
+            const haystack =
+              `${row.title} ${row.problem} ${row.method} ${row.dataset} ${row.key_findings} ${row.future_work}`.toLowerCase();
+            return queryTerms.reduce(
+              (score, term) => score + (haystack.includes(term) ? 1 : 0),
+              0
+            );
+          };
+          const scoreA = (simById.get(a.id) ?? 0) + keywordScore(a) * 0.08;
+          const scoreB = (simById.get(b.id) ?? 0) + keywordScore(b) * 0.08;
+          return scoreB - scoreA;
         });
       }
     } catch {
@@ -125,14 +179,17 @@ export async function POST(req: NextRequest) {
             .join('\n')
         : 'None';
 
-    const prompt = `You are the NexusGraph Research Assistant (grounded academic RAG advisor).
-Respond strictly in natural, clear, polite ENGLISH.
-CRITICAL GROUNDING RULES:
-1. Base EVERY factual claim ONLY on the theses provided in THESIS CONTEXT below. Never invent theses, authors, metrics, or citations.
-2. Answer directly in the first sentence without fluff. Keep simple answers to 2-3 sentences; comparisons or gap summaries to 3-4 concise bullet points.
-3. Whenever you reference a thesis, embed inline citation tokens verbatim like [[cite:EXACT_UUID]] right next to the claim.
-4. If the user asks about a topic not present in the context, state clearly that no thesis in the active collection covers it and offer concrete next steps inside NexusGraph.
-5. Do not output raw markdown JSON fences; return valid JSON matching the schema below.
+    const prompt = `You are the NexusGraph Research Intelligence Assistant—an insightful, articulate, and thorough academic research collaborator.
+${responseLanguageInstruction}
+
+CRITICAL RULES:
+1. Never use emojis, emoticons, or decorative symbols. Markdown bold formatting is allowed for section labels and emphasis.
+2. Never mention raw database UUIDs in prose. Refer to a thesis by its title or author/year. Use inline citation tokens exactly as [[cite:EXACT_UUID]] next to claims about that thesis; UUIDs may appear only inside those tokens and the JSON ID fields.
+3. Base every factual claim only on the theses provided in THESIS CONTEXT below. Never invent theses, authors, metrics, findings, or citations.
+4. Answer the user's exact question directly with a clear executive overview. Unless the user asks a simple yes/no question, provide a genuinely useful, well-structured analysis rather than a brief 1–2 sentence response. Use appropriate bold section labels or concise bullet points, and explain why findings matter, relevant methodological trade-offs, and realistic ways to build on an open research gap.
+5. Tailor the structure to the question. When explaining a thesis, consider labels such as **Research Problem**, **Methodology**, **Key Findings**, and **Research Gap / Research Opportunities**. For comparisons, consider **Method Comparison**, **Strengths and Limitations**, and **Recommended Research Directions**.
+6. If the user asks about a topic not covered in the context, say what evidence is missing and suggest concrete next steps, such as importing theses via OAI-PMH/OpenAlex or adjusting the filters.
+7. Return only valid JSON matching the schema below, without markdown fences. Write the answer and next-action labels in the requested language.
 
 ACTIVE FILTERS:
 - Search Query Context: ${queryContext || 'None'}
@@ -150,22 +207,30 @@ USER QUESTION:
 
 Return JSON strictly matching:
 {
-  "answer": "Your grounded English answer with [[cite:UUID]] tokens",
+  "answer": "A thorough, well-structured, emoji-free answer in the requested language, with inline [[cite:EXACT_UUID]] tokens",
   "citedIds": ["uuid-from-context"],
   "relatedThesisIds": ["primary-relevant-uuid"],
   "nextActions": [
-    { "label": "Short action label", "type": "open_graph" | "open_table" | "save_project" | "view_gap" | "claim_gap", "thesisId": "optional-uuid-from-context" }
+    { "label": "Short action label in the requested language (no emojis)", "type": "open_graph" | "open_table" | "save_project" | "view_gap" | "claim_gap" | "clear_filters", "thesisId": "optional-uuid-from-context" }
   ]
 }`;
 
     const ai = await generateJsonWithGemini<RagJsonResponse>(prompt, {
-      temperature: 0.2,
-      maxOutputTokens: 1600,
+      temperature: 0.35,
+      maxOutputTokens: 3000,
     });
 
-    // Extract cited IDs from inline markers too and validate every ID against real DB rows
+    const cleanAnswer = replaceRawThesisIds(
+      stripEmojis(
+        ai.answer ||
+          'I reviewed the active theses in Supabase, but could not generate a summary for that query.'
+      ),
+      thesisMap,
+      language === 'id' ? 'skripsi terkait' : 'related thesis'
+    );
+
     const inlineMatches = Array.from(
-      (ai.answer || '').matchAll(/\[\[cite:([^\]]+)\]\]/g)
+      cleanAnswer.matchAll(/\[\[cite:([^\]]+)\]\]/g)
     ).map((m) => m[1].trim());
 
     const mergedCitedIds = Array.from(
@@ -195,7 +260,7 @@ Return JSON strictly matching:
       .filter((a) => a && a.label && a.type)
       .slice(0, 3)
       .map((a) => ({
-        label: a.label,
+        label: stripEmojis(a.label),
         type: a.type,
         thesisId: a.thesisId && validIds.has(a.thesisId) ? a.thesisId : relatedThesisIds[0],
       }));
@@ -209,9 +274,7 @@ Return JSON strictly matching:
     }
 
     return NextResponse.json({
-      answer:
-        ai.answer ||
-        'I reviewed the active theses in Supabase, but could not generate a summary for that query.',
+      answer: cleanAnswer,
       citations,
       relatedThesisIds,
       nextActions,

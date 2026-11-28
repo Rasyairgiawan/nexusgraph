@@ -8,15 +8,17 @@ import {
   getSourceBadgeMeta,
   type PaperNodeData,
 } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 export type PaperFlowNode = Node<PaperNodeData, 'paperNode'>;
 
 export const PaperNode = memo(function PaperNode({ data }: NodeProps<PaperFlowNode>) {
   const { paper, gapSummary, isSelected, isDimmed } = data;
+  const { t, translateStatus } = useLanguage();
   const simMeta = getSimilarityMeta(paper.similarity);
   const sourceBadge = getSourceBadgeMeta(paper.sourceType);
   const isPersonalUnverified = paper.sourceType === 'personal' && !paper.verified;
-  const summaryLabel = gapSummary || 'Available';
+  const summaryLabel = gapSummary || t('available');
   const summaryClass = summaryLabel.startsWith('In Progress')
     ? 'border-[#F5D77A] bg-[#FEF3C7] text-[#B45309]'
     : summaryLabel.startsWith('Exploring')
@@ -75,18 +77,18 @@ export const PaperNode = memo(function PaperNode({ data }: NodeProps<PaperFlowNo
         {paper.verified ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-[#BCE6CA] bg-[#E6F6EC] px-2 py-0.5 text-[10px] font-medium text-[#15803D]">
             <Check className="h-3 w-3 stroke-[2.5]" />
-            Verified
+            {t('verified')}
           </span>
         ) : (
           <span className="inline-flex items-center rounded-full border border-[#DCE4F0] bg-[#F8FAFC] px-2 py-0.5 text-[10px] font-medium text-[#64748B]">
-            Unverified
+            {t('unverified')}
           </span>
         )}
 
         <span
           className={`inline-flex max-w-full items-center truncate rounded-full border px-2 py-0.5 text-[10px] font-medium ${summaryClass}`}
         >
-          {summaryLabel}
+          {translateStatus(summaryLabel)}
         </span>
 
         {(paper.sourceType === 'personal' ||
@@ -96,7 +98,7 @@ export const PaperNode = memo(function PaperNode({ data }: NodeProps<PaperFlowNo
             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${sourceBadge.className}`}
           >
             {paper.sourceType === 'open_access' && <Sparkles className="h-2.5 w-2.5" />}
-            {sourceBadge.label}
+            {translateStatus(sourceBadge.label)}
           </span>
         )}
       </div>

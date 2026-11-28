@@ -11,6 +11,8 @@ import {
 } from '@/lib/serverSupabase';
 import type { HarvestCandidate } from '@/types';
 
+export const maxDuration = 60;
+
 interface ExtractedEntities {
   problem: string;
   method: string;
@@ -150,7 +152,7 @@ Return ONLY valid JSON:
             ...corePayload,
             key_findings: corePayload.limitation,
             source_url: item.sourceUrl || null,
-            source_type: 'open_access',
+            source_type: item.sourceType === 'campus_repo' ? 'campus_repo' : 'open_access',
             uploaded_by: user?.id || null,
             university: item.university || null,
           };
@@ -175,7 +177,7 @@ Return ONLY valid JSON:
               ...(baseAttempt.data as Record<string, unknown>),
               key_findings: corePayload.limitation,
               source_url: item.sourceUrl || null,
-              source_type: 'open_access',
+              source_type: item.sourceType === 'campus_repo' ? 'campus_repo' : 'open_access',
               uploaded_by: user?.id || null,
               university: item.university || null,
             };

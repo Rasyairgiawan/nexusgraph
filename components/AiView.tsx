@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { askAiAssistantApi } from '@/lib/api';
+import { useLanguage, type TranslationKey } from '@/lib/i18n';
 import {
   getActiveClaimsForThesis,
   getThesisGapSummary,
@@ -83,11 +84,14 @@ function getDateBucket(iso: string): 'Today' | 'Yesterday' | 'Earlier' {
   return 'Earlier';
 }
 
-const SUGGESTION_PROMPTS = [
-  'Which research gaps remain open across these theses?',
-  'Compare methodologies used across the top theses.',
-  'Summarize key datasets and findings in this collection.',
-];
+const DATE_BUCKET_TRANSLATIONS: Record<
+  'Today' | 'Yesterday' | 'Earlier',
+  TranslationKey
+> = {
+  Today: 'today',
+  Yesterday: 'yesterday',
+  Earlier: 'earlier',
+};
 
 export function AiView({
   query,
@@ -117,6 +121,7 @@ export function AiView({
   onDeleteProject,
   onOpenProjectInMode,
 }: AiViewProps) {
+  const { lang, t } = useLanguage();
   const [searchConv, setSearchConv] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -204,6 +209,7 @@ export function AiView({
     try {
       const response = await askAiAssistantApi({
         message: text,
+        language: lang,
         selectedThesisId: selectedPaper?.id || null,
         queryContext: query,
         yearFilter: filters.year,
@@ -289,28 +295,38 @@ export function AiView({
   };
 
   const renderMessageContent = (content: string) => {
-    const parts = content.split(/(\[\[cite:[^\]]+\]\])/g);
+    const parts = content.split(/(\[\[cite:[^\]]+\]\]|\*\*[^*]+\*\*)/g);
     return parts.map((part, idx) => {
-      const match = part.match(/^\[\[cite:([^\]]+)\]\]$/);
-      if (!match) {
+      const citeMatch = part.match(/^\[\[cite:([^\]]+)\]\]$/);
+      if (citeMatch) {
+        const thesis = paperById.get(citeMatch[1].trim());
+        if (!thesis) return null;
         return (
-          <span key={idx} className="whitespace-pre-wrap">
-            {part}
-          </span>
+          <button
+            key={idx}
+            type="button"
+            onClick={() => onSelectPaper(thesis.id)}
+            title={thesis.title}
+            className="mx-1 inline-flex items-center rounded-md border border-[#BFDBFE] bg-[#EAF1FE] px-1.5 py-0.5 font-mono text-[10.5px] font-semibold text-[#1D4ED8] hover:bg-[#DBEAFE] cursor-pointer align-baseline"
+          >
+            {thesis.year} · {thesis.fileName}
+          </button>
         );
       }
-      const thesis = paperById.get(match[1].trim());
-      if (!thesis) return null;
+
+      const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+      if (boldMatch) {
+        return (
+          <strong key={idx} className="font-semibold text-[#0F172A]">
+            {boldMatch[1]}
+          </strong>
+        );
+      }
+
       return (
-        <button
-          key={idx}
-          type="button"
-          onClick={() => onSelectPaper(thesis.id)}
-          title={thesis.title}
-          className="mx-1 inline-flex items-center rounded-md border border-[#BFDBFE] bg-[#EAF1FE] px-1.5 py-0.5 font-mono text-[10.5px] font-semibold text-[#1D4ED8] hover:bg-[#DBEAFE] cursor-pointer align-baseline"
-        >
-          {thesis.year} · {thesis.fileName}
-        </button>
+        <span key={idx} className="whitespace-pre-wrap">
+          {part}
+        </span>
       );
     });
   };
@@ -326,7 +342,7 @@ export function AiView({
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-[#1E2A5A] px-3 text-[12.5px] font-semibold text-white shadow-xs transition-colors hover:bg-[#1D4ED8] cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            <span>New Chat</span>
+            <span>{t('newChat')}</span>
           </button>
 
           <div className="relative mt-2.5">
@@ -335,7 +351,7 @@ export function AiView({
               type="text"
               value={searchConv}
               onChange={(e) => setSearchConv(e.target.value)}
-              placeholder="Search conversations..."
+              placeholder={t('searchConv')}
               className="h-8 w-full rounded-lg border border-[#DCE4F0] bg-[#F4F7FB] pl-8 pr-2.5 text-[12px] text-[#0F172A] placeholder:text-[#8A97AB] focus:border-[#1E2A5A] focus:bg-white focus:outline-none"
             />
           </div>
@@ -351,7 +367,7 @@ export function AiView({
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#DCE4F0] px-3 py-6 text-center">
               <MessageSquare className="h-5 w-5 text-[#8A97AB]" />
               <div className="mt-2 text-[12px] font-medium text-[#5B6B82]">
-                No conversations yet
+                {t('noConv')}
               </div>
               <p className="mt-0.5 text-[11px] text-[#8A97AB]">
                 Ask a research question to start a grounded thread.
@@ -364,7 +380,7 @@ export function AiView({
               return (
                 <div key={bucket}>
                   <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#8A97AB]">
-                    {bucket}
+                    {t(DATE_BUCKET_TRANSLATIONS[bucket])}
                   </div>
                   <div className="space-y-1">
                     {items.map((conv) => {
@@ -414,20 +430,20 @@ export function AiView({
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B6B82]">
-              Projects
+              {t('projects')}
             </span>
             <button
               type="button"
               onClick={() => onOpenProjectModal(null, 'create')}
               className="text-[11px] font-semibold text-[#1E2A5A] hover:underline cursor-pointer"
             >
-              + New Project
+              {t('newProject')}
             </button>
           </div>
 
           {projects.length === 0 ? (
             <div className="mt-2 rounded-lg border border-dashed border-[#DCE4F0] bg-white px-3 py-2.5 text-center text-[11.5px] text-[#8A97AB]">
-              No projects yet
+              {t('noProjects')}
             </div>
           ) : (
             <div className="mt-2 max-h-[160px] space-y-1 overflow-y-auto pr-0.5">
@@ -466,7 +482,7 @@ export function AiView({
         {/* Active Context Bar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-[#DCE4F0]/60 bg-transparent px-4 py-2.5">
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#5B6B82]">
-            ACTIVE CONTEXT:
+            {t('activeContext')}
           </span>
           {query.trim() && (
             <span className="rounded-full bg-[#1E2A5A] px-2.5 py-0.5 text-[11px] font-medium text-white">
@@ -496,16 +512,14 @@ export function AiView({
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <h2 className="mt-3 text-[16px] font-bold text-[#0F172A]">
-                  NexusGraph Research Assistant
+                  {t('aiTitle')}
                 </h2>
                 <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#5B6B82] max-w-lg mx-auto">
-                  Ask questions grounded strictly in your active Supabase theses. I will
-                  synthesize answers with inline citations, related thesis cards, and
-                  concrete next steps.
+                  {t('aiDesc')}
                 </p>
 
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
-                  {SUGGESTION_PROMPTS.map((prompt) => (
+                  {[t('prompt1'), t('prompt2'), t('prompt3')].map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
@@ -556,12 +570,12 @@ export function AiView({
                         {copiedMsgId === msg.id ? (
                           <>
                             <Check className="h-3 w-3 text-[#16A34A]" />
-                            <span>Copied</span>
+                            <span>{t('copied')}</span>
                           </>
                         ) : (
                           <>
                             <Copy className="h-3 w-3" />
-                            <span>Copy</span>
+                            <span>{t('copy')}</span>
                           </>
                         )}
                       </button>
@@ -582,7 +596,7 @@ export function AiView({
                           >
                             <div className="min-w-0 flex-1">
                               <div className="text-[10px] font-bold uppercase tracking-wider text-[#5B6B82]">
-                                Related Thesis
+                                {t('relatedThesis')}
                               </div>
                               <div className="mt-0.5 text-[12.5px] font-bold text-[#0F172A] truncate">
                                 {rel.title}
@@ -603,7 +617,7 @@ export function AiView({
                                 className="inline-flex h-7 items-center gap-1 rounded-md border border-[#DCE4F0] bg-white px-2.5 text-[11px] font-medium text-[#0F172A] hover:border-[#1E2A5A] cursor-pointer"
                               >
                                 <BookmarkPlus className="h-3 w-3 text-[#1E2A5A]" />
-                                <span>Save to Project</span>
+                                <span>{t('saveToProject')}</span>
                               </button>
                               <button
                                 type="button"
@@ -611,7 +625,7 @@ export function AiView({
                                 className="inline-flex h-7 items-center gap-1 rounded-md border border-[#BFDBFE] bg-[#EAF1FE] px-2.5 text-[11px] font-semibold text-[#1E2A5A] hover:bg-[#DBEAFE] cursor-pointer"
                               >
                                 <GitFork className="h-3 w-3" />
-                                <span>Open in Graph</span>
+                                <span>{t('openInGraph')}</span>
                               </button>
                               <button
                                 type="button"
@@ -619,7 +633,7 @@ export function AiView({
                                 className="inline-flex h-7 items-center gap-1 rounded-md border border-[#DCE4F0] bg-white px-2.5 text-[11px] font-medium text-[#5B6B82] hover:text-[#0F172A] cursor-pointer"
                               >
                                 <Table2 className="h-3 w-3" />
-                                <span>Open in Table</span>
+                                <span>{t('table')}</span>
                               </button>
                             </div>
                           </div>
@@ -636,7 +650,7 @@ export function AiView({
                           className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#F5D77A] bg-[#FFF9E6] px-2.5 text-[11px] font-semibold text-[#B45309] hover:bg-[#FEF3C7] cursor-pointer"
                         >
                           <Hand className="h-3 w-3" />
-                          <span>Set as Research Gap</span>
+                          <span>{t('setAsGap')}</span>
                         </button>
                       )}
                       {primaryRelated && (
@@ -646,7 +660,7 @@ export function AiView({
                           className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#DCE4F0] bg-white px-2.5 text-[11px] font-medium text-[#0F172A] hover:bg-[#F4F7FB] cursor-pointer"
                         >
                           <BookmarkPlus className="h-3 w-3 text-[#1E2A5A]" />
-                          <span>Save to Project</span>
+                          <span>{t('saveToProject')}</span>
                         </button>
                       )}
                     </div>
@@ -655,7 +669,7 @@ export function AiView({
                     {msg.nextActions && msg.nextActions.length > 0 && (
                       <div className="pt-1">
                         <div className="text-[11px] font-semibold text-[#5B6B82]">
-                          Where to go next?
+                          {t('whereNext')}
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {msg.nextActions.map((act, idx) => (
@@ -680,7 +694,7 @@ export function AiView({
             {isSending && (
               <div className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4F0] bg-white px-4 py-2.5 text-[12.5px] text-[#5B6B82] shadow-2xs">
                 <Loader2 className="h-4 w-4 animate-spin text-[#1E2A5A]" />
-                <span>Analyzing grounded Supabase theses...</span>
+                <span>{t('aiAnalyzing')}</span>
               </div>
             )}
 
@@ -700,7 +714,7 @@ export function AiView({
             {selectedPaper && (
               <div className="flex items-center justify-between gap-2 rounded-lg border border-[#BFDBFE] bg-[#EAF1FE]/60 px-3 py-1.5 text-[11.5px] text-[#1D4ED8]">
                 <span className="truncate">
-                  <strong>Focused Thesis:</strong> {selectedPaper.title}
+                  <strong>{t('focusedThesis')}</strong> {selectedPaper.title}
                 </span>
                 <button
                   type="button"
@@ -724,7 +738,7 @@ export function AiView({
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about research gaps, methodologies, or thesis comparisons..."
+                placeholder={t('aiPlaceholder')}
                 className="h-10 flex-1 rounded-xl border border-[#DCE4F0] bg-[#F8FAFC] px-4 text-[13px] text-[#0F172A] placeholder:text-[#8A97AB] focus:border-[#1E2A5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E2A5A]/15"
               />
               <button
@@ -733,7 +747,7 @@ export function AiView({
                 className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#1E2A5A] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#1D4ED8] disabled:opacity-50 cursor-pointer shrink-0"
               >
                 <Send className="h-3.5 w-3.5" />
-                <span>Send</span>
+                <span>{t('send')}</span>
               </button>
             </form>
           </div>
